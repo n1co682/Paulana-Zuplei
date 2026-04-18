@@ -65,7 +65,7 @@ def main():
     logger.info("Starting Agnes AI Supply Chain Manager Integration")
     
     # 1. Input Section
-    product_id = 1
+    product_id = 2
     prefs = UserPreferences(price=3, quality=7, sustainability=5, ethics=8, consolidation=4)
     
     print(f"\n{'='*80}")
@@ -99,15 +99,38 @@ def main():
 
     # 5. Decision Logic
     replacements = find_replacements(bom, all_contenders)
+    
+    # Identify a "Baseline" (e.g., the first supplier found for each material)
+    baseline_config = {}
+    for entry in bom:
+        if replacements[entry]:
+            baseline_config[entry] = replacements[entry][0]
+    
+    baseline_ranked = evaluate_config(baseline_config, prefs) if baseline_config else None
+    
     all_ranked = rank_configurations(replacements, prefs)
     
-    # 6. Results Output (Top 3)
+    # 6. Results Output
     print(f"\n{'='*80}")
-    print(f"{'TOP 3 OPTIMIZED CONFIGURATIONS':^80}")
+    print(f"{'BASELINE vs OPTIMIZED CONFIGURATIONS':^80}")
     print(f"{'='*80}")
     
+    if baseline_ranked:
+        print_dimension_scores("ORIGINAL BOM (Baseline)", baseline_ranked)
+        print("  Current Suppliers:")
+        for entry, comp in baseline_ranked.configuration.items():
+            print(f"    - {entry.equivalence_class}: {comp.supplier_name:<20} (Qual: {comp.quality:.2f}, Price: ${comp.price_per_unit:.2f})")
+        print("-" * 80)
+
+    print(f"\n{'TOP 3 OPTIMIZED ALTERNATIVES':^80}")
+    print(f"{'-'*80}")
+    
     for i, top in enumerate(all_ranked[:3], 1):
-        print_dimension_scores(f"OPTION #{i}", top)
+        if baseline_ranked and top.total_score <= baseline_ranked.total_score:
+            if i == 1: print("  (No better alternatives found than baseline)")
+            break
+            
+        print_dimension_scores(f"OPTIMIZED OPTION #{i}", top)
         print("  Selected Suppliers:")
         for entry, comp in top.configuration.items():
             print(f"    - {entry.equivalence_class}: {comp.supplier_name:<20} (Qual: {comp.quality:.2f}, Price: ${comp.price_per_unit:.2f})")
