@@ -76,7 +76,8 @@ def scrape_component_data(supplier_name: str, component_name: str) -> Dict:
     prompt = (
         f"Use Google Search to find the official technical specifications of '{component_name}' from supplier '{supplier_name}'. "
         f"Extract quality (normalized rank from 0.0 to 1.0), description, certificates (e.g. Non-GMO, Organic, Halal, ISO), "
-        f"and common allergens. Return JSON object with keys: quality, text, certificates, allergens."
+        f"and common allergens. **IMPORTANT:** If the product is allergen-free, return an empty list [] for allergens."
+        f"Return JSON object with keys: quality, text, certificates, allergens."
     )
     try:
         result = _call_gemini_structured(prompt, ComponentDataResponse, web_search=True)
@@ -132,7 +133,8 @@ def analyze_supplier_ethics(supplier_name: str) -> Dict:
         f"associated with '{supplier_name}'. Focus on worker conditions, legal cases, and environmental violations. "
         f"**IMPORTANT:** If no major scandals or ethical problems are found, return an empty string for ethics_summary. "
         f"If found, provide a very short, bulleted list of the problems. "
-        f"For production_place, give ONLY the primary city and country (e.g., 'Basel, Switzerland') and nothing more. "
+        f"For production_place, give ONLY the primary city and country (e.g., 'Basel, Switzerland'). "
+        f"**IMPORTANT:** Provide exactly ONE location, even if the company has multiple sites. "
         f"Return JSON object with keys: ethics_summary, production_place."
     )
     try:
