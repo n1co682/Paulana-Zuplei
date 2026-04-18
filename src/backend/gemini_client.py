@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 import time
@@ -6,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 from typing import Any
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger("agnes.gemini")
 
 load_dotenv()
 
@@ -41,8 +44,6 @@ class GeminiClient:
         )
 
     def generate(self, prompt: str, web_search: bool = False) -> str:
-        import logging
-        logger = logging.getLogger("agnes.gemini")
         config = self._config_search if web_search else self._config_plain
         
         logger.debug(f"Attempting generation with model {self.MODEL}...")
@@ -67,9 +68,11 @@ class GeminiClient:
         last_error = None
         for attempt in range(1, self._max_retries + 1):
             try:
+                logger.info(f"Gemini attempt {attempt}/{self._max_retries}...")
                 return self._generate_once(prompt=prompt, config=config)
             except Exception as exc:
                 last_error = exc
+                logger.warning(f"Attempt {attempt} failed: {exc}")
                 if attempt >= self._max_retries:
                     break
                 backoff = min(

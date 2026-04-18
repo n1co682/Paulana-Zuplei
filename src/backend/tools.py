@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Type, TypeVar
 
 from pydantic import BaseModel, Field
@@ -39,17 +40,6 @@ class NegotiationResponse(BaseModel):
     email_text: str
     price_per_unit: int = Field(ge=0)
     lead_time: int = Field(ge=0)
-
-
-def _call_gemini(prompt: str, web_search: bool = False) -> str:
-    logger.info(f"Calling Gemini (web_search={web_search}). Prompt snippet: {prompt[:100]}...")
-    try:
-        response = _gemini.generate(prompt, web_search=web_search)
-        logger.info("Gemini call successful.")
-        return response
-    except Exception as e:
-        logger.error(f"Gemini call failed: {e}. Falling back to mock.")
-        return _mock_response(prompt)
 
 
 def _call_gemini_structured(prompt: str, schema: Type[T], web_search: bool = False) -> T:
