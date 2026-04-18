@@ -1,29 +1,53 @@
 import itertools
+import logging
 from typing import List, Dict
 from models import (BillOfMaterials, UserPreferences, RankedBOM, 
                     BOMConfiguration, ReplacementMap)
 from component_from_supplier import ComponentFromSupplier
 
+logger = logging.getLogger("agnes.pipeline")
+
 def find_replacements(bom: BillOfMaterials, db: List[ComponentFromSupplier]) -> ReplacementMap:
+    logger.info(f"--- STAGE: PIPELINE | Finding replacements for {len(bom)} materials ---")
     result: ReplacementMap = {}
     for entry in bom:
-        result[entry] = [
+        candidates = [
             c for c in db if c.equivalence_class == entry.equivalence_class
             and all(cert in c.certificates for cert in entry.required_certs)
             and not any(alg in c.allergents for alg in entry.forbidden_allergens)
         ]
+        result[entry] = candidates
+        logger.info(f"  • {entry.equivalence_class}: Found {len(candidates)} valid substitutes")
     return result
 
 def rank_configurations(replacements: ReplacementMap, prefs: UserPreferences) -> List[RankedBOM]:
     entries = list(replacements.keys())
     candidate_lists = [replacements[e] for e in entries]
-    results = [evaluate_config(dict(zip(entries, combo)), prefs) 
-               for combo in itertools.product(*candidate_lists)]
-    return sorted(results, key=lambda x: x.total_score, reverse=True)
+    
+    # Calculate total combinations
+    total_combos = 1
+    for cl in candidate_lists:
+        total_combos *= len(cl) if cl else 0
+    
+    logger.info(f"--- STAGE: PIPELINE | Evaluating {total_combos} possible BOM configurations ---")
+    
+    results = []
+    for i, combo in enumerate(itertools.product(*candidate_lists)):
+        config = dict(zip(entries, combo))
+        results.append(evaluate_config(config, prefs))
+        if (i + 1) % 100 == 0:
+            logger.info(f"  Processed {i+1}/{total_combos} configurations...")
+
+    sorted_results = sorted(results, key=lambda x: x.total_score, reverse=True)
+    logger.info("--- STAGE: PIPELINE | Ranking complete ---")
+    return sorted_results
 
 def evaluate_config(config: BOMConfiguration, p: UserPreferences) -> RankedBOM:
     comps = list(config.values())
     n = len(comps)
+    if n == 0:
+        return RankedBOM(config, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
     unique_suppliers = len(set(c.supplier_name for c in comps))
     cons_score = (n - unique_suppliers) / (n - 1) if n > 1 else 1.0
 

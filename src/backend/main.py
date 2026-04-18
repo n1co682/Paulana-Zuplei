@@ -26,20 +26,17 @@ def fetch_bom_from_db(product_id: int) -> List[BOMEntry]:
         for row in cursor.fetchall():
             bom.append(BOMEntry(
                 component_id=str(row[0]),
-                equivalence_class=row[2] # Agnes works with string names
+                equivalence_class=row[2]
             ))
     return bom
 
 def agnes_to_pipeline_model(agnes_comp: AgnesComponent) -> ComponentFromSupplier:
     """Bridge: Convert Agnes Component model to Team's Pipeline model."""
-    # Get supplier info from Agnes DB
     supp = db.get_supplier(agnes_comp.supplier_id)
-    
-    # Map Agnes values to Pipeline values
     return ComponentFromSupplier(
         supplier_name=supp.name,
         price_per_unit=agnes_comp.price_per_unit / 100.0 if agnes_comp.price_per_unit else 1.0,
-        price_scaled=0.5, # Pipeline will re-scale this if needed
+        price_scaled=0.5, 
         quality=agnes_comp.quality or 0.5,
         quality_report=agnes_comp.text or "Enriched by Agnes",
         production_place=supp.production_place or "Global",
@@ -54,56 +51,69 @@ def agnes_to_pipeline_model(agnes_comp: AgnesComponent) -> ComponentFromSupplier
         equivalence_class=agnes_comp.equivalence_class
     )
 
+def print_dimension_scores(label: str, rb, width=8):
+    """Print a row of scores across dimensions."""
+    headers = ["Price", "Qual", "Resil", "Sust", "Eth", "Lead", "Cons"]
+    scores = [rb.p_score, rb.q_score, rb.r_score, rb.s_score, rb.e_score, rb.l_score, rb.c_score]
+    
+    score_line = " | ".join([f"{headers[i]}: {scores[i]:.2f}" for i in range(len(headers))])
+    print(f"\n[{label}] Total Score: {rb.total_score:.3f}")
+    print(f"  Dimensions -> {score_line}")
+    print(f"  Unique Suppliers: {rb.unique_suppliers}")
+
 def main():
     logger.info("Starting Agnes AI Supply Chain Manager Integration")
     
-    # 1. Fetch real BOM (e.g., Product ID 1)
+    # 1. Input Section
     product_id = 1
-    logger.info(f"Fetching BOM for Product ID: {product_id}")
+    prefs = UserPreferences(price=3, quality=7, sustainability=5, ethics=8, consolidation=4)
+    
+    print(f"\n{'='*80}")
+    print(f"{'AGNES SUPPLY CHAIN OPTIMIZATION REPORT':^80}")
+    print(f"{'='*80}")
+    
+    # 2. Original BOM
     bom = fetch_bom_from_db(product_id)
-    logger.info(f"BOM contains {len(bom)} materials.")
+    print(f"\n[ORIGINAL BOM] Product ID: {product_id}")
+    for entry in bom:
+        print(f"  • {entry.component_id}: {entry.equivalence_class}")
+        
+    # 3. User Priorities
+    print(f"\n[USER PRIORITIES]")
+    print(f"  Quality: {prefs.quality} | Ethics: {prefs.ethics} | Price: {prefs.price} | "
+          f"Sustainability: {prefs.sustainability} | Consolidation: {prefs.consolidation}")
+    print("-" * 80)
 
-    # 2. Process each material with Agnes
+    # 4. Enrichment (Agnes)
     all_contenders: List[ComponentFromSupplier] = []
     processed_classes = set()
     
     for entry in bom:
         if entry.equivalence_class in processed_classes:
             continue
-            
-        logger.info(f"Processing category: {entry.equivalence_class}")
         agent = AgnesAgent(entry.equivalence_class)
         agnes_pool = agent.run()
-        
-        # Convert to pipeline models
         for ac in agnes_pool:
             all_contenders.append(agnes_to_pipeline_model(ac))
-        
         processed_classes.add(entry.equivalence_class)
 
-    # 3. Decision Logic Integration
-    prefs = UserPreferences(price=3, quality=7, sustainability=5, ethics=5)
-    logger.info("--- STAGE: DECISION PIPELINE ---")
-    
-    # The pipeline expects a ReplacementMap
+    # 5. Decision Logic
     replacements = find_replacements(bom, all_contenders)
-    
-    # Rank configurations
     all_ranked = rank_configurations(replacements, prefs)
     
-    if all_ranked:
-        top = all_ranked[0]
-        print(f"\n{'='*60}")
-        print(f"{'AGNES FINAL RECOMMENDATION':^60}")
-        print(f"{'='*60}")
-        print(f"Total Score: {top.total_score:.3f}")
-        print(f"Unique Suppliers: {top.unique_suppliers}")
-        print("-" * 60)
+    # 6. Results Output (Top 3)
+    print(f"\n{'='*80}")
+    print(f"{'TOP 3 OPTIMIZED CONFIGURATIONS':^80}")
+    print(f"{'='*80}")
+    
+    for i, top in enumerate(all_ranked[:3], 1):
+        print_dimension_scores(f"OPTION #{i}", top)
+        print("  Selected Suppliers:")
         for entry, comp in top.configuration.items():
-            print(f"  • {entry.equivalence_class}: {comp.supplier_name} (Qual: {comp.quality}, Price: ${comp.price_per_unit})")
-        print(f"{'='*60}\n")
-    else:
-        print("No valid configurations found.")
+            print(f"    - {entry.equivalence_class}: {comp.supplier_name:<20} (Qual: {comp.quality:.2f}, Price: ${comp.price_per_unit:.2f})")
+        print("-" * 40)
+    
+    print(f"{'='*80}\n")
 
 if __name__ == "__main__":
     main()
