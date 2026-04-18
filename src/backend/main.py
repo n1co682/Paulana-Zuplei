@@ -1,165 +1,100 @@
-from pipeline import find_replacements, rank_replacements
+from pipeline import find_replacements, rank_configurations, evaluate_config
 from models import BOMEntry, UserPreferences
 from component_from_supplier import ComponentFromSupplier
 
-# ── Supplier database ──────────────────────────────────────────────────────────
-# Each entry is one component offered by a supplier.
-# Scores are 0.0–1.0. price_scaled: lower price → higher score.
+# ── Expanded Data Setup ───────────────────────────────────────────────────────
+# Data Schema: (Name, Price, Qual, Resil, Rpt, Country, Sust, Eth, Rpt, LeadScore, Certs, Issues, LeadDays, Cap, Class)
 
-supplier_db = [
-    # ── Resistors (equivalence class "R_10K_0805") ────────────────────────────
-    ComponentFromSupplier(
-        price_per_unit=0.05, price_scaled=0.95,
-        quality=0.90, quality_report="IPC-A-610 Class 2 compliant",
-        production_place="Germany",
-        resilience_score=0.85, ethics_score=0.88, ethics_report="Fair wage certified, no violations on record", esg_score=0.80,
-        certificates=["RoHS", "REACH", "ISO9001"],
-        allergents=[],
-        lead_time=7.0, lead_time_score=0.90,
-        equivalence_class="R_10K_0805",
-    ),
-    ComponentFromSupplier(
-        price_per_unit=0.02, price_scaled=0.99,
-        quality=0.65, quality_report="Basic QC only",
-        production_place="China",
-        resilience_score=0.40, ethics_score=0.35, ethics_report="No third-party audit available",esg_score=0.30,
-        certificates=["RoHS"],
-        allergents=[],
-        lead_time=45.0, lead_time_score=0.20,
-        equivalence_class="R_10K_0805",
-    ),
-    ComponentFromSupplier(
-        price_per_unit=0.08, price_scaled=0.88,
-        quality=0.95, quality_report="AEC-Q200 automotive grade",
-        production_place="Japan",
-        resilience_score=0.92, ethics_score=0.80, ethics_report="Audited annually, meets EICC standards", esg_score=0.85,
-        certificates=["RoHS", "REACH", "ISO9001", "AEC-Q200"],
-        allergents=[],
-        lead_time=14.0, lead_time_score=0.75,
-        equivalence_class="R_10K_0805",
-    ),
+db = [
+    # --- Resistors (R_10K) ---
+    ComponentFromSupplier("GlobalCorp", 0.08, 0.88, 0.95, "Rpt", "DE", 0.9, 0.9, "Rpt", 0.9, ["RoHS"], [], 7, 0.9, "R_10K"),
+    ComponentFromSupplier("FastChips",  0.02, 0.70, 0.65, "Rpt", "CN", 0.4, 0.3, "Rpt", 0.3, ["RoHS"], [], 5, 0.95, "R_10K"),
+    ComponentFromSupplier("NipponComp", 0.12, 0.98, 0.99, "Rpt", "JP", 0.8, 0.9, "Rpt", 0.9, ["RoHS", "Reach"], [], 10, 0.85, "R_10K"),
 
-    # ── Capacitors (equivalence class "C_100N_0603") ──────────────────────────
-    ComponentFromSupplier(
-        price_per_unit=0.03, price_scaled=0.97,
-        quality=0.78, quality_report="Standard SMD, meets spec",
-        production_place="Taiwan",
-        resilience_score=0.70, ethics_score=0.65, ethics_report="Self-reported, no independent audit", esg_score=0.60,
-        certificates=["RoHS", "REACH"],
-        allergents=[],
-        lead_time=21.0, lead_time_score=0.55,
-        equivalence_class="C_100N_0603",
-    ),
-    ComponentFromSupplier(
-        price_per_unit=0.06, price_scaled=0.92,
-        quality=0.88, quality_report="Low ESR, high temp rated",
-        production_place="Germany",
-        resilience_score=0.82, ethics_score=0.85, ethics_report="SA8000 certified, annual third-party audit", esg_score=0.78,
-        certificates=["RoHS", "REACH", "ISO9001"],
-        allergents=[],
-        lead_time=10.0, lead_time_score=0.85,
-        equivalence_class="C_100N_0603",
-    ),
+    # --- Microcontrollers (MCU_ARM) ---
+    ComponentFromSupplier("GlobalCorp", 1.20, 0.85, 0.92, "Rpt", "FR", 0.8, 0.8, "Rpt", 0.7, ["RoHS"], [], 28, 0.4, "MCU_ARM"),
+    ComponentFromSupplier("SpecUK",     0.95, 0.78, 0.88, "Rpt", "UK", 0.6, 0.7, "Rpt", 0.6, ["RoHS"], [], 14, 0.7, "MCU_ARM"),
+    ComponentFromSupplier("NipponComp", 1.50, 0.99, 0.95, "Rpt", "JP", 0.9, 0.9, "Rpt", 0.8, ["RoHS"], [], 21, 0.6, "MCU_ARM"),
 
-    # ── MCU (equivalence class "MCU_ARM_M0") ──────────────────────────────────
-    ComponentFromSupplier(
-        price_per_unit=1.20, price_scaled=0.70,
-        quality=0.92, quality_report="STM32G0 series, production tested",
-        production_place="France",
-        resilience_score=0.75, ethics_score=0.80, ethics_report="EU supply chain due diligence compliant", esg_score=0.72,
-        certificates=["RoHS", "REACH", "ISO9001"],
-        allergents=[],
-        lead_time=28.0, lead_time_score=0.45,
-        equivalence_class="MCU_ARM_M0",
-    ),
-    ComponentFromSupplier(
-        price_per_unit=0.95, price_scaled=0.78,
-        quality=0.88, quality_report="RP2040, community-verified",
-        production_place="UK",
-        resilience_score=0.60, ethics_score=0.75, ethics_report="Conflict minerals policy in place", esg_score=0.65,
-        certificates=["RoHS", "REACH"],
-        allergents=[],
-        lead_time=14.0, lead_time_score=0.72,
-        equivalence_class="MCU_ARM_M0",
-    ),
-    # Disqualified for RoHS-required BOM entries — included to test filtering
-    ComponentFromSupplier(
-        price_per_unit=0.80, price_scaled=0.85,
-        quality=0.80, quality_report="GD32E230, basic testing",
-        production_place="China",
-        resilience_score=0.45, ethics_score=0.30, ethics_report="No audit conducted", esg_score=0.28,
-        certificates=["REACH"],          # missing RoHS → filtered out when required
-        allergents=[],
-        lead_time=60.0, lead_time_score=0.10,
-        equivalence_class="MCU_ARM_M0",
-    ),
+    # --- Capacitors (C_100nF) ---
+    ComponentFromSupplier("FastChips",  0.01, 0.60, 0.50, "Rpt", "CN", 0.3, 0.2, "Rpt", 0.4, ["RoHS"], [], 3, 0.99, "C_100nF"),
+    ComponentFromSupplier("GlobalCorp", 0.05, 0.90, 0.90, "Rpt", "DE", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 7, 0.9, "C_100nF"),
+    ComponentFromSupplier("EuroLogis",  0.06, 0.85, 0.92, "Rpt", "NL", 0.8, 0.9, "Rpt", 0.9, ["RoHS"], [], 5, 0.8, "C_100nF"),
+
+    # --- Voltage Regulators (LDO_3V3) ---
+    ComponentFromSupplier("SpecUK",     0.45, 0.82, 0.80, "Rpt", "UK", 0.7, 0.8, "Rpt", 0.7, ["RoHS"], [], 10, 0.7, "LDO_3V3"),
+    ComponentFromSupplier("GlobalCorp", 0.55, 0.88, 0.90, "Rpt", "DE", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 12, 0.8, "LDO_3V3"),
+    ComponentFromSupplier("FastChips",  0.30, 0.65, 0.55, "Rpt", "CN", 0.4, 0.3, "Rpt", 0.4, ["RoHS"], [], 6, 0.9, "LDO_3V3"),
+
+    # --- Connectors (USB_C) ---
+    ComponentFromSupplier("EuroLogis",  0.75, 0.90, 0.85, "Rpt", "NL", 0.8, 0.9, "Rpt", 0.8, ["RoHS"], [], 14, 0.6, "USB_C"),
+    ComponentFromSupplier("NipponComp", 0.90, 0.96, 0.92, "Rpt", "JP", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 20, 0.5, "USB_C"),
 ]
 
-# ── Bill of Materials ──────────────────────────────────────────────────────────
-# Each BOMEntry describes one line item and its constraints.
-
+# A more complex BOM representing a small IoT device
 bom = [
-    BOMEntry(
-        component_id="R1",
-        equivalence_class="R_10K_0805",
-        required_certs=("RoHS", "REACH"),   # must have both
-        forbidden_allergens=(),
-    ),
-    BOMEntry(
-        component_id="C3",
-        equivalence_class="C_100N_0603",
-        required_certs=("RoHS",),
-        forbidden_allergens=(),
-    ),
-    BOMEntry(
-        component_id="U1",
-        equivalence_class="MCU_ARM_M0",
-        required_certs=("RoHS",),           # filters out the GD32 entry above
-        forbidden_allergens=(),
-    ),
+    BOMEntry("R1", "R_10K", ("RoHS",)),
+    BOMEntry("R2", "R_10K", ("RoHS",)),
+    BOMEntry("C1", "C_100nF", ("RoHS",)),
+    BOMEntry("U1", "MCU_ARM", ("RoHS",)),
+    BOMEntry("U2", "LDO_3V3", ("RoHS",)),
+    BOMEntry("J1", "USB_C", ("RoHS",))
 ]
 
-# ── User preferences ───────────────────────────────────────────────────────────
-# 0 = ignore dimension, 1 = low priority, 5 = highest priority.
+# Heavily favoring Quality and Consolidation (fewer suppliers)
+prefs = UserPreferences(price=2, quality=8, consolidation=7)
 
-prefs = UserPreferences(
-    price=2,
-    quality=5,
-    resilience=3,
-    sustainability=4,
-    ethics=3,
-    lead_time=1,
-)
+# ── Analysis ──────────────────────────────────────────────────────────────────
 
-# ── Run pipeline ───────────────────────────────────────────────────────────────
+# Define a "Legacy" selection using mostly FastChips and SpecUK
+old_selection = {
+    bom[0]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "R_10K"),
+    bom[1]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "R_10K"),
+    bom[2]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "C_100nF"),
+    bom[3]: next(c for c in db if c.supplier_name == "SpecUK" and c.equivalence_class == "MCU_ARM"),
+    bom[4]: next(c for c in db if c.supplier_name == "SpecUK" and c.equivalence_class == "LDO_3V3"),
+    bom[5]: next(c for c in db if c.supplier_name == "EuroLogis" and c.equivalence_class == "USB_C"),
+}
 
-replacements = find_replacements(bom, supplier_db)
-ranked       = rank_replacements(replacements, prefs)
+old_bom_ranked = evaluate_config(old_selection, prefs)
 
-# ── Print results ──────────────────────────────────────────────────────────────
+# Find all better alternatives
+replacements = find_replacements(bom, db)
+all_ranked = rank_configurations(replacements, prefs)
+better_alternatives = [b for b in all_ranked if b.total_score > old_bom_ranked.total_score]
 
-DIM_WIDTH  = 7   # column width for dimension scores
-SCORE_PAD  = 55  # chars before dimension columns start
+# ── Printing ──────────────────────────────────────────────────────────────────
 
-header_dims = f"{'price':>{DIM_WIDTH}} {'qual':>{DIM_WIDTH}} {'resil':>{DIM_WIDTH}} {'sust':>{DIM_WIDTH}} {'eth':>{DIM_WIDTH}} {'lead':>{DIM_WIDTH}}"
+def print_bom_table_row(label, rb, width=6):
+    dims = (f"{rb.p_score:>{width}.2f} {rb.q_score:>{width}.2f} {rb.r_score:>{width}.2f} "
+            f"{rb.s_score:>{width}.2f} {rb.e_score:>{width}.2f} {rb.l_score:>{width}.2f} {rb.c_score:>{width}.2f}")
+    print(f"{label:<13} {rb.total_score:<7.3f} | {dims} | {rb.unique_suppliers:>10} unique")
 
-for entry, options in ranked.items():
-    print(f"\n{'─' * 72}")
-    print(f"  BOM entry : {entry.component_id}  [{entry.equivalence_class}]")
-    print(f"  Required  : certs={list(entry.required_certs)}  allergens blocked={list(entry.forbidden_allergens)}")
-    print(f"  Candidates: {len(options)} found\n")
-    print(f"  {'#':<3} {'Origin':<14} {'Score':>6}  {header_dims}")
-    print(f"  {'─'*3} {'─'*14} {'─'*6}  {'─'*DIM_WIDTH} {'─'*DIM_WIDTH} {'─'*DIM_WIDTH} {'─'*DIM_WIDTH} {'─'*DIM_WIDTH} {'─'*DIM_WIDTH}")
+W = 6
+print(f"\n{'='*110}")
+print(f"{'EXPANDED BOM PERFORMANCE COMPARISON':^110}")
+print(f"{'='*110}")
+header = (f"{'Configuration':<13} {'Score':<7} | {'Price':>{W}} {'Qual':>{W}} {'Resil':>{W}} "
+          f"{'Sust':>{W}} {'Eth':>{W}} {'Lead':>{W}} {'Cons':>{W}} | {'Suppliers':>10}")
+print(header)
+print("-" * 110)
 
-    for rank, opt in enumerate(options, 1):
-        c = opt.component
-        dims = (f"{c.price_scaled:>{DIM_WIDTH}.2f} {c.quality:>{DIM_WIDTH}.2f} "
-                f"{c.resilience_score:>{DIM_WIDTH}.2f} {c.esg_score:>{DIM_WIDTH}.2f} "
-                f"{c.ethics_score:>{DIM_WIDTH}.2f} {c.lead_time_score:>{DIM_WIDTH}.2f}")
-        print(f"  {rank:<3} {c.production_place:<14} {opt.score:>6.3f}  {dims}")
+print_bom_table_row("OLD BOM", old_bom_ranked)
+print("-" * 110)
 
-print(f"\n{'─' * 72}")
-print("\nPreferences used:")
-for field, val in vars(prefs).items():
-    bar = "★" * val + "☆" * (5 - val)
-    print(f"  {field:<14} {bar}  ({val}/5)")
+if not better_alternatives:
+    print("  (No better configurations found with current preferences)")
+else:
+    # Print top 5 better options to avoid flooding the console
+    for i, alt in enumerate(better_alternatives[:5], 1):
+        print_bom_table_row(f"Better #{i}", alt)
+
+print(f"{'='*110}\n")
+
+if better_alternatives:
+    top = better_alternatives[0]
+    print(f"RECOMMENDED OPTIMIZATION (Top Ranked Alternative):")
+    for entry, comp in top.configuration.items():
+        old_comp = old_selection[entry]
+        status = "✓ [KEEP]" if old_comp.supplier_name == comp.supplier_name else f"→ [SWAP: {old_comp.supplier_name}]"
+        print(f"  • {entry.component_id} ({entry.equivalence_class}): {comp.supplier_name:<15} {status}")

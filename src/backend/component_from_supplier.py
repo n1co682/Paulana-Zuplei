@@ -1,12 +1,13 @@
 from typing import List
 
 class ComponentFromSupplier:
-    def __init__(self, price_per_unit: float, price_scaled: float, quality: float, 
+    def __init__(self, supplier_name: str, price_per_unit: float, price_scaled: float, quality: float, 
                  quality_report: str, production_place: str, resilience_score: float, 
                  ethics_score: float, ethics_report: str, esg_score: float, 
                  certificates: List[str], allergents: List[str], lead_time: float, 
                  lead_time_score: float, equivalence_class: str):
 
+        self.supplier_name = supplier_name
         self.price_per_unit = price_per_unit
         self.price_scaled = price_scaled
         self.quality = quality
@@ -31,6 +32,11 @@ class ComponentFromSupplier:
         if not isinstance(value, expected_type):
             raise TypeError(f"{name} must be of type {expected_type.__name__}.")
         return value
+
+    @property
+    def supplier_name(self): return self._supplier_name
+    @supplier_name.setter
+    def supplier_name(self, v): self._supplier_name = self._validate_type(v, str, "supplier_name")
 
     @property
     def price_per_unit(self): return self._price_per_unit
