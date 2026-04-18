@@ -6,7 +6,7 @@ class Component(BaseModel):
     supplier_id: Optional[str] = None
     name: str
     price_per_unit: Optional[int] = Field(None, description="Price per unit in cents or smallest currency unit")
-    quality: Optional[int] = Field(None, ge=1, le=10, description="Quality rank from 1 to 10")
+    quality: Optional[float] = Field(None, ge=0.0, le=1.0, description="Quality rank from 0.0 to 1.0")
     text: Optional[str] = Field(None, description="Description or technical specifications")
     certificates: List[str] = Field(default_factory=list, description="Unique list of certificates like Non-GMO, Organic, etc.")
     allergens: List[str] = Field(default_factory=list, description="List of allergens")

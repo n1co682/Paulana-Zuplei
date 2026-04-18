@@ -27,7 +27,7 @@ def test_agnes_workflow():
         name="Vitamin C Powder",
         equivalence_class="vitamins",
         supplier_id=s1.id,
-        quality=9,
+        quality=0.9,
         certificates=["Organic"]
     )
     db.add_component(c1)
@@ -41,7 +41,7 @@ def test_agnes_workflow():
         supp = db.get_supplier(comp.supplier_id)
         print(f"Supplier: {supp.name} | Production: {supp.production_place}")
         print(f"  Component: {comp.name} | Price: {comp.price_per_unit} | Lead Time: {comp.lead_time}h")
-        print(f"  Quality: {comp.quality}/10 | Certs: {comp.certificates}")
+        print(f"  Quality: {comp.quality} | Certs: {comp.certificates}")
         print(f"  Ethics: {supp.ethics[:100]}...")
         print("-" * 30)
 

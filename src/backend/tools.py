@@ -19,7 +19,7 @@ class SupplierSearchResponse(BaseModel):
 
 
 class ComponentDataResponse(BaseModel):
-    quality: int = Field(ge=1, le=10)
+    quality: float = Field(ge=0.0, le=1.0)
     text: str
     certificates: List[str]
     allergens: List[str]
@@ -75,7 +75,7 @@ def scrape_component_data(supplier_name: str, component_name: str) -> Dict:
     """Scrape technical specifications using Gemini's built-in Google Search."""
     prompt = (
         f"Use Google Search to find the official technical specifications of '{component_name}' from supplier '{supplier_name}'. "
-        f"Extract quality (rank 1-10), description, certificates (e.g. Non-GMO, Organic, Halal, ISO), "
+        f"Extract quality (normalized rank from 0.0 to 1.0), description, certificates (e.g. Non-GMO, Organic, Halal, ISO), "
         f"and common allergens. Return JSON object with keys: quality, text, certificates, allergens."
     )
     try:
@@ -130,6 +130,9 @@ def analyze_supplier_ethics(supplier_name: str) -> Dict:
     prompt = (
         f"Use Google Search to find any specific scandals, labor rights abuses, or ethical controversies "
         f"associated with '{supplier_name}'. Focus on worker conditions, legal cases, and environmental violations. "
+        f"**IMPORTANT:** If no major scandals or ethical problems are found, return an empty string for ethics_summary. "
+        f"If found, provide a very short, bulleted list of the problems. "
+        f"For production_place, give ONLY the primary city and country (e.g., 'Basel, Switzerland') and nothing more. "
         f"Return JSON object with keys: ethics_summary, production_place."
     )
     try:
