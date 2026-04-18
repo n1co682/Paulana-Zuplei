@@ -1,7 +1,10 @@
+import logging
 from typing import List, Dict
 from .models import Component, Supplier
 from .database_mock import db
 from . import tools
+
+logger = logging.getLogger("agnes.agent")
 
 class AgnesAgent:
     def __init__(self, equivalence_class: str):
@@ -9,11 +12,11 @@ class AgnesAgent:
         self.pool: List[Component] = []
 
     def run(self) -> List[Component]:
-        print(f"--- Starting Agnes Agent for: {self.equivalence_class} ---")
+        logger.info(f"Starting Agnes Agent for: {self.equivalence_class}")
         
         # 1. Get current DB info
         self.pool = db.get_components_by_equivalence_class(self.equivalence_class)
-        print(f"Found {len(self.pool)} existing components in DB.")
+        logger.info(f"Found {len(self.pool)} existing components in DB.")
 
         # 2. Enrich existing components if fields are missing
         for comp in self.pool:
@@ -49,11 +52,12 @@ class AgnesAgent:
         return self.pool[:5]
 
     def _enrich_component(self, component: Component):
-        print(f"Enriching component: {component.name}...")
+        logger.info(f"Enriching component: {component.name} (Supplier: {component.supplier_id})")
         
         # Get supplier
         supplier = db.get_supplier(component.supplier_id)
         if not supplier:
+            logger.warning(f"Supplier {component.supplier_id} not found for component {component.name}")
             return
 
         # Scrape specs if missing

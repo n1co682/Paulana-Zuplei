@@ -26,10 +26,18 @@ class GeminiClient:
         )
 
     def generate(self, prompt: str, web_search: bool = False) -> str:
+        import logging
+        logger = logging.getLogger("agnes.gemini")
         config = self._config_search if web_search else self._config_plain
-        response = self._client.models.generate_content(
-            model=self.MODEL,
-            contents=prompt,
-            config=config,
-        )
-        return response.text or ""
+        
+        logger.debug(f"Attempting generation with model {self.MODEL}...")
+        try:
+            response = self._client.models.generate_content(
+                model=self.MODEL,
+                contents=prompt,
+                config=config,
+            )
+            return response.text or ""
+        except Exception as e:
+            logger.error(f"Generation error in GeminiClient: {e}")
+            raise

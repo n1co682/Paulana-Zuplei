@@ -1,13 +1,25 @@
 import json
+import logging
 from typing import Dict, List
 
 from .gemini_client import GeminiClient
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("agnes.tools")
 
 _gemini = GeminiClient()
 
 
 def _call_gemini(prompt: str, web_search: bool = False) -> str:
-    return _gemini.generate(prompt, web_search=web_search)
+    logger.info(f"Calling Gemini (web_search={web_search}). Prompt snippet: {prompt[:100]}...")
+    try:
+        response = _gemini.generate(prompt, web_search=web_search)
+        logger.info("Gemini call successful.")
+        return response
+    except Exception as e:
+        logger.error(f"Gemini call failed: {e}. Falling back to mock.")
+        return _mock_response(prompt)
 
 
 def _mock_response(prompt: str) -> str:
@@ -51,11 +63,18 @@ def _parse_json_dict(text: str) -> dict:
 
 
 def _parse_json_any(text: str) -> dict | list:
+    logger.debug(f"Parsing JSON from: {text[:200]}...")
     if "```json" in text:
         text = text.split("```json")[1].split("```")[0].strip()
     elif "```" in text:
         text = text.split("```")[1].split("```")[0].strip()
-    return json.loads(text)
+    try:
+        result = json.loads(text)
+        logger.debug("JSON parsed successfully.")
+        return result
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parsing failed: {e}")
+        raise
 
 
 def search_suppliers(equivalence_class: str) -> List[str]:

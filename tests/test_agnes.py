@@ -1,4 +1,19 @@
+import os
+import sys
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger("agnes.test")
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.backend.agent import AgnesAgent, make_decision
 from src.backend.database_mock import db
 from src.backend.models import Supplier, Component
