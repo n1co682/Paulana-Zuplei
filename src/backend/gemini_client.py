@@ -18,7 +18,7 @@ _DEFAULT_API_KEY = "AQ.Ab8RN6J02bBr8NIcgiTcxaNh0lC6G_n7mAI2cLCkJbIwaY_QMA"
 class GeminiClient:
     """Encapsulates all google.genai / Vertex AI dependencies."""
 
-    MODEL = "gemini-3.1-pro-preview"
+    MODEL = "gemini-3-flash-preview"
 
     def __init__(
         self,
