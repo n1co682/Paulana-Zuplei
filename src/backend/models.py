@@ -37,4 +37,11 @@ class RankedBOM:
     c_score: float # Consolidation
     unique_suppliers: int
 
+@dataclass
+class RankedOption:
+    component: ComponentFromSupplier
+    score: float             # 0.0–1.0, higher is better
+
+# Type aliases for the pipeline outputs
 ReplacementMap = Dict[BOMEntry, List[ComponentFromSupplier]]
+RankedMap      = Dict[BOMEntry, List[RankedOption]]
