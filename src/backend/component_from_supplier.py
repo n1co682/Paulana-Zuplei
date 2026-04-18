@@ -1,6 +1,6 @@
 from typing import List
 
-class ComponentSupplier:
+class ComponentFromSupplier:
     def __init__(self, price_per_unit: float, price_scaled: float, quality: float, 
                  quality_report: str, production_place: str, resilience_score: float, 
                  ethics_score: float, ethics_report: str, esg_score: float, 
