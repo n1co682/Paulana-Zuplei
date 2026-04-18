@@ -10,7 +10,11 @@ load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Enable Google Search grounding
+    model = genai.GenerativeModel(
+        model_name='gemini-1.5-flash',
+        tools=[{"google_search": {}}]
+    )
 else:
     print("Warning: GOOGLE_API_KEY not found. Using mock responses for tools.")
     model = None
@@ -57,10 +61,10 @@ def search_suppliers(equivalence_class: str) -> List[str]:
         return ["Global Source A", "TechMaterials Corp", "BioSupply Inc", "EcoIngredients", "PureRaw Materials"]
 
 def scrape_component_data(supplier_name: str, component_name: str) -> Dict:
-    """Mock scraping of technical specifications."""
+    """Scrape technical specifications using Gemini's built-in Google Search."""
     prompt = (
-        f"Search for technical specifications of '{component_name}' from supplier '{supplier_name}'. "
-        f"Include quality (rank 1-10), description, certificates (e.g. Non-GMO, Organic, Halal, ISO), "
+        f"Use Google Search to find the official technical specifications of '{component_name}' from supplier '{supplier_name}'. "
+        f"Extract quality (rank 1-10), description, certificates (e.g. Non-GMO, Organic, Halal, ISO), "
         f"and common allergens. Return as JSON with keys: quality, text, certificates, allergens."
     )
     response_text = call_gemini(prompt, json_mode=True)
@@ -79,9 +83,9 @@ def scrape_component_data(supplier_name: str, component_name: str) -> Dict:
 def analyze_supplier_ethics(supplier_name: str) -> Dict:
     """Search for ethical reports and scandals."""
     prompt = (
-        f"Analyze the reputation and ethics of '{supplier_name}'. Search for scandals, worker condition reports, "
-        f"and sustainability (ESG) scores. Return as JSON with keys: ethics (summary), esg_score (1-100), "
-        f"production_place (likely country/region)."
+        f"Use Google Search to analyze the reputation and ethics of '{supplier_name}'. Search for specific scandals, "
+        f"worker condition reports, and sustainability (ESG) scores. Return as JSON with keys: ethics (summary), "
+        f"esg_score (1-100), production_place (likely country/region)."
     )
     response_text = call_gemini(prompt, json_mode=True)
     try:
