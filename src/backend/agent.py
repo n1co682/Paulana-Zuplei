@@ -12,11 +12,11 @@ class AgnesAgent:
         self.pool: List[Component] = []
 
     def run(self) -> List[Component]:
-        logger.info(f"Starting Agnes Agent for: {self.equivalence_class}")
+        logger.info(f"--- STAGE: INITIALIZING AGENT FOR {self.equivalence_class.upper()} ---")
         
         # 1. Get current DB info
         self.pool = db.get_components_by_equivalence_class(self.equivalence_class)
-        logger.info(f"Found {len(self.pool)} existing components in DB.")
+        logger.info(f"--- STAGE: DATABASE LOOKUP | Found {len(self.pool)} existing components ---")
 
         # 2. Enrich existing components if fields are missing
         for comp in self.pool:
@@ -25,7 +25,7 @@ class AgnesAgent:
         # 3. If less than 5 suppliers, search for new ones
         if len(self.pool) < 5:
             needed = 5 - len(self.pool)
-            print(f"Only {len(self.pool)} suppliers found. Searching for {needed} more...")
+            logger.info(f"--- STAGE: EXPANSION | Searching for {needed} new suppliers ---")
             new_supplier_names = tools.search_suppliers(self.equivalence_class)
             
             if not isinstance(new_supplier_names, list):
@@ -52,7 +52,7 @@ class AgnesAgent:
         return self.pool[:5]
 
     def _enrich_component(self, component: Component):
-        logger.info(f"Enriching component: {component.name} (Supplier: {component.supplier_id})")
+        logger.info(f"--- STAGE: ENRICHMENT | Starting enrichment for {component.name} ---")
         
         # Get supplier
         supplier = db.get_supplier(component.supplier_id)
@@ -62,6 +62,7 @@ class AgnesAgent:
 
         # Scrape specs if missing
         if not component.quality or not component.text:
+            logger.info(f"Scraping technical specs for {component.name}...")
             specs = tools.scrape_component_data(supplier.name, component.name)
             component.quality = specs.get("quality", component.quality)
             component.text = specs.get("text", component.text)
@@ -70,18 +71,19 @@ class AgnesAgent:
 
         # Enrich supplier info if missing
         if not supplier.ethics or not supplier.esg_score:
+            logger.info(f"Analyzing ethics and ESG for supplier {supplier.name}...")
             ethics_data = tools.analyze_supplier_ethics(supplier.name)
             supplier.ethics = ethics_data.get("ethics", supplier.ethics)
             supplier.esg_score = ethics_data.get("esg_score", supplier.esg_score)
             supplier.production_place = ethics_data.get("production_place", supplier.production_place)
 
         # Mock negotiation for price and lead time (always do this for demo)
+        logger.info(f"Initiating mock negotiation with {supplier.name}...")
         negotiation = tools.generate_mock_negotiation(supplier.name, component.name)
         component.price_per_unit = negotiation.get("price_per_unit", component.price_per_unit)
         component.lead_time = negotiation.get("lead_time", component.lead_time)
         
-        # In a real app, we'd save the email text somewhere
-        print(f"Mock negotiation completed for {supplier.name}.")
+        logger.info(f"Enrichment complete for {component.name}.")
 
 def make_decision(components: List[Component]) -> Component:
     """Mock the decision system for now."""

@@ -68,7 +68,8 @@ class GeminiClient:
         last_error = None
         for attempt in range(1, self._max_retries + 1):
             try:
-                logger.info(f"Gemini attempt {attempt}/{self._max_retries}...")
+                prompt_snippet = (prompt[:100] + "...") if len(prompt) > 100 else prompt
+                logger.info(f"Gemini attempt {attempt}/{self._max_retries} | Prompt: {prompt_snippet}")
                 return self._generate_once(prompt=prompt, config=config)
             except Exception as exc:
                 last_error = exc
@@ -99,4 +100,7 @@ class GeminiClient:
                 raise TimeoutError(f"Gemini call timed out after {self._timeout_seconds}s") from exc
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
-        return response.text or ""
+        
+        resp_text = response.text or ""
+        logger.info(f"Gemini response received ({len(resp_text)} chars). Preview: {resp_text[:500]}...")
+        return resp_text

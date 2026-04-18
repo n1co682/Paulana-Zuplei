@@ -43,14 +43,19 @@ class NegotiationResponse(BaseModel):
 
 
 def _call_gemini_structured(prompt: str, schema: Type[T], web_search: bool = False) -> T:
+    logger.info(f"Requesting structured data for {schema.__name__} (web_search={web_search})")
     payload = _gemini.generate_json(
         prompt=prompt,
         response_schema=schema.model_json_schema(),
         web_search=web_search,
     )
     if not isinstance(payload, dict):
+        logger.error(f"Gemini returned {type(payload).__name__} instead of dict for {schema.__name__}")
         raise ValueError(f"Expected JSON object, got {type(payload).__name__}")
-    return schema.model_validate(payload)
+    
+    result = schema.model_validate(payload)
+    logger.info(f"Successfully validated {schema.__name__}. Data: {result.model_dump()}")
+    return result
 
 
 def search_suppliers(equivalence_class: str) -> List[str]:
