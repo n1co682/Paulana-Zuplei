@@ -3,7 +3,7 @@ from typing import Dict, List, Type, TypeVar
 
 from pydantic import BaseModel, Field
 
-from .gemini_client import GeminiClient
+from gemini_client import GeminiClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -40,6 +40,11 @@ class NegotiationResponse(BaseModel):
     email_text: str
     price_per_unit: int = Field(ge=0)
     lead_time: int = Field(ge=0)
+
+
+class QualityComparisonResponse(BaseModel):
+    rankings: Dict[str, float] = Field(..., description="Map of supplier name to relative quality score (0.0-1.0)")
+    rationale: str = Field(..., description="Brief explanation of the ranking")
 
 
 def _call_gemini_structured(prompt: str, schema: Type[T], web_search: bool = False) -> T:
@@ -162,3 +167,26 @@ def generate_mock_negotiation(supplier_name: str, component_name: str) -> Dict:
         return result.model_dump()
     except Exception:
         return {"email_text": f"Hi, the price for {component_name} is $1.20/unit with 72h lead time.", "price_per_unit": 120, "lead_time": 72}
+
+
+def compare_quality_pool(contenders: List[Dict]) -> Dict[str, float]:
+    """Compare a pool of contenders and return relative quality scores (0.0-1.0)."""
+    context = ""
+    for c in contenders:
+        context += f"Supplier: {c['supplier_name']}\nSpecs: {c['text']}\nCertificates: {c['certificates']}\n---\n"
+
+    prompt = (
+        f"**Task:** Compare the following 5 raw material offerings and rank them by quality on a scale of 0.0 to 1.0.\n"
+        f"**Logic:** The best offering should be close to 1.0, and others scaled relative to it based on purity, "
+        f"certificates, and technical specs provided.\n\n"
+        f"**Contenders:**\n{context}\n\n"
+        f"Return JSON object with key 'rankings' (map of supplier name to float) and 'rationale'."
+    )
+    
+    try:
+        result = _call_gemini_structured(prompt, QualityComparisonResponse, web_search=False)
+        logger.info(f"Comparative quality rationale: {result.rationale}")
+        return result.rankings
+    except Exception as e:
+        logger.error(f"Comparative quality failed: {e}. Using default scores.")
+        return {c['supplier_name']: 0.8 for c in contenders}

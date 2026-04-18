@@ -1,100 +1,109 @@
+import logging
+import sqlite3
+from typing import List, Dict
 from pipeline import find_replacements, rank_configurations, evaluate_config
-from models import BOMEntry, UserPreferences
+from models import BOMEntry, UserPreferences, Component as AgnesComponent
 from component_from_supplier import ComponentFromSupplier
+from agent import AgnesAgent, db
 
-# ── Expanded Data Setup ───────────────────────────────────────────────────────
-# Data Schema: (Name, Price, Qual, Resil, Rpt, Country, Sust, Eth, Rpt, LeadScore, Certs, Issues, LeadDays, Cap, Class)
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("agnes.main")
 
-db = [
-    # --- Resistors (R_10K) ---
-    ComponentFromSupplier("GlobalCorp", 0.08, 0.88, 0.95, "Rpt", "DE", 0.9, 0.9, "Rpt", 0.9, ["RoHS"], [], 7, 0.9, "R_10K"),
-    ComponentFromSupplier("FastChips",  0.02, 0.70, 0.65, "Rpt", "CN", 0.4, 0.3, "Rpt", 0.3, ["RoHS"], [], 5, 0.95, "R_10K"),
-    ComponentFromSupplier("NipponComp", 0.12, 0.98, 0.99, "Rpt", "JP", 0.8, 0.9, "Rpt", 0.9, ["RoHS", "Reach"], [], 10, 0.85, "R_10K"),
+def fetch_bom_from_db(product_id: int) -> List[BOMEntry]:
+    """Fetch BOM for a specific product from SQLite."""
+    bom = []
+    with sqlite3.connect("data/db_new.sqlite") as conn:
+        cursor = conn.cursor()
+        query = """
+            SELECT rm.Id, rm.Name, ec.Name 
+            FROM BOM b
+            JOIN RawMaterial rm ON b.Materiald = rm.Id
+            JOIN "Equivalence Class" ec ON rm.EquivalenceClassId = ec.Id
+            WHERE b.ProductID = ?
+        """
+        cursor.execute(query, (product_id,))
+        for row in cursor.fetchall():
+            bom.append(BOMEntry(
+                component_id=str(row[0]),
+                equivalence_class=row[2] # Agnes works with string names
+            ))
+    return bom
 
-    # --- Microcontrollers (MCU_ARM) ---
-    ComponentFromSupplier("GlobalCorp", 1.20, 0.85, 0.92, "Rpt", "FR", 0.8, 0.8, "Rpt", 0.7, ["RoHS"], [], 28, 0.4, "MCU_ARM"),
-    ComponentFromSupplier("SpecUK",     0.95, 0.78, 0.88, "Rpt", "UK", 0.6, 0.7, "Rpt", 0.6, ["RoHS"], [], 14, 0.7, "MCU_ARM"),
-    ComponentFromSupplier("NipponComp", 1.50, 0.99, 0.95, "Rpt", "JP", 0.9, 0.9, "Rpt", 0.8, ["RoHS"], [], 21, 0.6, "MCU_ARM"),
+def agnes_to_pipeline_model(agnes_comp: AgnesComponent) -> ComponentFromSupplier:
+    """Bridge: Convert Agnes Component model to Team's Pipeline model."""
+    # Get supplier info from Agnes DB
+    supp = db.get_supplier(agnes_comp.supplier_id)
+    
+    # Map Agnes values to Pipeline values
+    return ComponentFromSupplier(
+        supplier_name=supp.name,
+        price_per_unit=agnes_comp.price_per_unit / 100.0 if agnes_comp.price_per_unit else 1.0,
+        price_scaled=0.5, # Pipeline will re-scale this if needed
+        quality=agnes_comp.quality or 0.5,
+        quality_report=agnes_comp.text or "Enriched by Agnes",
+        production_place=supp.production_place or "Global",
+        resilience_score=0.7,
+        ethics_score=(supp.esg_score / 100.0) if supp.esg_score else 0.5,
+        ethics_report=supp.ethics or "N/A",
+        esg_score=(supp.esg_score / 100.0) if supp.esg_score else 0.5,
+        certificates=agnes_comp.certificates,
+        allergents=agnes_comp.allergens,
+        lead_time=float(agnes_comp.lead_time) if agnes_comp.lead_time else 72.0,
+        lead_time_score=0.6,
+        equivalence_class=agnes_comp.equivalence_class
+    )
 
-    # --- Capacitors (C_100nF) ---
-    ComponentFromSupplier("FastChips",  0.01, 0.60, 0.50, "Rpt", "CN", 0.3, 0.2, "Rpt", 0.4, ["RoHS"], [], 3, 0.99, "C_100nF"),
-    ComponentFromSupplier("GlobalCorp", 0.05, 0.90, 0.90, "Rpt", "DE", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 7, 0.9, "C_100nF"),
-    ComponentFromSupplier("EuroLogis",  0.06, 0.85, 0.92, "Rpt", "NL", 0.8, 0.9, "Rpt", 0.9, ["RoHS"], [], 5, 0.8, "C_100nF"),
+def main():
+    logger.info("Starting Agnes AI Supply Chain Manager Integration")
+    
+    # 1. Fetch real BOM (e.g., Product ID 1)
+    product_id = 1
+    logger.info(f"Fetching BOM for Product ID: {product_id}")
+    bom = fetch_bom_from_db(product_id)
+    logger.info(f"BOM contains {len(bom)} materials.")
 
-    # --- Voltage Regulators (LDO_3V3) ---
-    ComponentFromSupplier("SpecUK",     0.45, 0.82, 0.80, "Rpt", "UK", 0.7, 0.8, "Rpt", 0.7, ["RoHS"], [], 10, 0.7, "LDO_3V3"),
-    ComponentFromSupplier("GlobalCorp", 0.55, 0.88, 0.90, "Rpt", "DE", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 12, 0.8, "LDO_3V3"),
-    ComponentFromSupplier("FastChips",  0.30, 0.65, 0.55, "Rpt", "CN", 0.4, 0.3, "Rpt", 0.4, ["RoHS"], [], 6, 0.9, "LDO_3V3"),
+    # 2. Process each material with Agnes
+    all_contenders: List[ComponentFromSupplier] = []
+    processed_classes = set()
+    
+    for entry in bom:
+        if entry.equivalence_class in processed_classes:
+            continue
+            
+        logger.info(f"Processing category: {entry.equivalence_class}")
+        agent = AgnesAgent(entry.equivalence_class)
+        agnes_pool = agent.run()
+        
+        # Convert to pipeline models
+        for ac in agnes_pool:
+            all_contenders.append(agnes_to_pipeline_model(ac))
+        
+        processed_classes.add(entry.equivalence_class)
 
-    # --- Connectors (USB_C) ---
-    ComponentFromSupplier("EuroLogis",  0.75, 0.90, 0.85, "Rpt", "NL", 0.8, 0.9, "Rpt", 0.8, ["RoHS"], [], 14, 0.6, "USB_C"),
-    ComponentFromSupplier("NipponComp", 0.90, 0.96, 0.92, "Rpt", "JP", 0.8, 0.8, "Rpt", 0.8, ["RoHS"], [], 20, 0.5, "USB_C"),
-]
+    # 3. Decision Logic Integration
+    prefs = UserPreferences(price=3, quality=7, sustainability=5, ethics=5)
+    logger.info("--- STAGE: DECISION PIPELINE ---")
+    
+    # The pipeline expects a ReplacementMap
+    replacements = find_replacements(bom, all_contenders)
+    
+    # Rank configurations
+    all_ranked = rank_configurations(replacements, prefs)
+    
+    if all_ranked:
+        top = all_ranked[0]
+        print(f"\n{'='*60}")
+        print(f"{'AGNES FINAL RECOMMENDATION':^60}")
+        print(f"{'='*60}")
+        print(f"Total Score: {top.total_score:.3f}")
+        print(f"Unique Suppliers: {top.unique_suppliers}")
+        print("-" * 60)
+        for entry, comp in top.configuration.items():
+            print(f"  • {entry.equivalence_class}: {comp.supplier_name} (Qual: {comp.quality}, Price: ${comp.price_per_unit})")
+        print(f"{'='*60}\n")
+    else:
+        print("No valid configurations found.")
 
-# A more complex BOM representing a small IoT device
-bom = [
-    BOMEntry("R1", "R_10K", ("RoHS",)),
-    BOMEntry("R2", "R_10K", ("RoHS",)),
-    BOMEntry("C1", "C_100nF", ("RoHS",)),
-    BOMEntry("U1", "MCU_ARM", ("RoHS",)),
-    BOMEntry("U2", "LDO_3V3", ("RoHS",)),
-    BOMEntry("J1", "USB_C", ("RoHS",))
-]
-
-# Heavily favoring Quality and Consolidation (fewer suppliers)
-prefs = UserPreferences(price=2, quality=8, consolidation=7)
-
-# ── Analysis ──────────────────────────────────────────────────────────────────
-
-# Define a "Legacy" selection using mostly FastChips and SpecUK
-old_selection = {
-    bom[0]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "R_10K"),
-    bom[1]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "R_10K"),
-    bom[2]: next(c for c in db if c.supplier_name == "FastChips" and c.equivalence_class == "C_100nF"),
-    bom[3]: next(c for c in db if c.supplier_name == "SpecUK" and c.equivalence_class == "MCU_ARM"),
-    bom[4]: next(c for c in db if c.supplier_name == "SpecUK" and c.equivalence_class == "LDO_3V3"),
-    bom[5]: next(c for c in db if c.supplier_name == "EuroLogis" and c.equivalence_class == "USB_C"),
-}
-
-old_bom_ranked = evaluate_config(old_selection, prefs)
-
-# Find all better alternatives
-replacements = find_replacements(bom, db)
-all_ranked = rank_configurations(replacements, prefs)
-better_alternatives = [b for b in all_ranked if b.total_score > old_bom_ranked.total_score]
-
-# ── Printing ──────────────────────────────────────────────────────────────────
-
-def print_bom_table_row(label, rb, width=6):
-    dims = (f"{rb.p_score:>{width}.2f} {rb.q_score:>{width}.2f} {rb.r_score:>{width}.2f} "
-            f"{rb.s_score:>{width}.2f} {rb.e_score:>{width}.2f} {rb.l_score:>{width}.2f} {rb.c_score:>{width}.2f}")
-    print(f"{label:<13} {rb.total_score:<7.3f} | {dims} | {rb.unique_suppliers:>10} unique")
-
-W = 6
-print(f"\n{'='*110}")
-print(f"{'EXPANDED BOM PERFORMANCE COMPARISON':^110}")
-print(f"{'='*110}")
-header = (f"{'Configuration':<13} {'Score':<7} | {'Price':>{W}} {'Qual':>{W}} {'Resil':>{W}} "
-          f"{'Sust':>{W}} {'Eth':>{W}} {'Lead':>{W}} {'Cons':>{W}} | {'Suppliers':>10}")
-print(header)
-print("-" * 110)
-
-print_bom_table_row("OLD BOM", old_bom_ranked)
-print("-" * 110)
-
-if not better_alternatives:
-    print("  (No better configurations found with current preferences)")
-else:
-    # Print top 5 better options to avoid flooding the console
-    for i, alt in enumerate(better_alternatives[:5], 1):
-        print_bom_table_row(f"Better #{i}", alt)
-
-print(f"{'='*110}\n")
-
-if better_alternatives:
-    top = better_alternatives[0]
-    print(f"RECOMMENDED OPTIMIZATION (Top Ranked Alternative):")
-    for entry, comp in top.configuration.items():
-        old_comp = old_selection[entry]
-        status = "✓ [KEEP]" if old_comp.supplier_name == comp.supplier_name else f"→ [SWAP: {old_comp.supplier_name}]"
-        print(f"  • {entry.component_id} ({entry.equivalence_class}): {comp.supplier_name:<15} {status}")
+if __name__ == "__main__":
+    main()

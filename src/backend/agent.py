@@ -1,10 +1,13 @@
 import logging
 from typing import List, Dict
-from .models import Component, Supplier
-from .database_mock import db
-from . import tools
+from models import Component, Supplier
+from database_manager import DatabaseManager
+import tools
 
 logger = logging.getLogger("agnes.agent")
+
+# Initialize DB Manager
+db = DatabaseManager()
 
 class AgnesAgent:
     def __init__(self, equivalence_class: str):
@@ -18,37 +21,58 @@ class AgnesAgent:
         self.pool = db.get_components_by_equivalence_class(self.equivalence_class)
         logger.info(f"--- STAGE: DATABASE LOOKUP | Found {len(self.pool)} existing components ---")
 
-        # 2. Enrich existing components if fields are missing
-        for comp in self.pool:
+        # 2. Enrich existing components if fields are missing (limit to top 5)
+        for comp in self.pool[:5]:
             self._enrich_component(comp)
 
         # 3. If less than 5 suppliers, search for new ones
         if len(self.pool) < 5:
-            needed = 5 - len(self.pool)
-            logger.info(f"--- STAGE: EXPANSION | Searching for {needed} new suppliers ---")
-            new_supplier_names = tools.search_suppliers(self.equivalence_class)
+            eq_id = db.get_equivalence_class_id(self.equivalence_class)
+            if not eq_id:
+                logger.error(f"Cannot expand: Equivalence class '{self.equivalence_class}' ID not found.")
+            else:
+                needed = 5 - len(self.pool)
+                logger.info(f"--- STAGE: EXPANSION | Searching for {needed} new suppliers ---")
+                new_supplier_names = tools.search_suppliers(self.equivalence_class)
+                
+                for name in new_supplier_names[:needed]:
+                    # Add to DB
+                    supplier = Supplier(name=name)
+                    db.add_supplier(supplier)
+                    
+                    component = Component(
+                        name=f"{self.equivalence_class} from {name}",
+                        equivalence_class=self.equivalence_class,
+                        supplier_id=supplier.id
+                    )
+                    db.add_component(component, eq_id)
+                    
+                    # Enrich and add to pool
+                    self._enrich_component(component)
+                    self.pool.append(component)
+
+        # 4. STAGE: COMPARATIVE QUALITY
+        if len(self.pool) >= 2:
+            logger.info("--- STAGE: COMPARATIVE QUALITY | Ranking contenders relative to each other ---")
+            contenders_data = []
+            for comp in self.pool:
+                supp = db.get_supplier(comp.supplier_id)
+                contenders_data.append({
+                    "supplier_name": supp.name,
+                    "text": comp.text or "No specs found",
+                    "certificates": comp.certificates
+                })
             
-            if not isinstance(new_supplier_names, list):
-                print(f"Warning: Expected list of suppliers, got {type(new_supplier_names)}. Using empty list.")
-                new_supplier_names = []
+            rankings = tools.compare_quality_pool(contenders_data)
+            
+            # Update quality in pool and DB
+            for comp in self.pool:
+                supp = db.get_supplier(comp.supplier_id)
+                if supp.name in rankings:
+                    comp.quality = rankings[supp.name]
+                    db.update_product_enrichment(comp)
 
-            for name in new_supplier_names[:needed]:
-                # Create new supplier and component
-                supplier = Supplier(name=name)
-                db.add_supplier(supplier)
-                
-                component = Component(
-                    name=f"{self.equivalence_class} from {name}",
-                    equivalence_class=self.equivalence_class,
-                    supplier_id=supplier.id
-                )
-                db.add_component(component)
-                
-                # Enrich new data
-                self._enrich_component(component)
-                self.pool.append(component)
-
-        print(f"Final pool contains {len(self.pool)} options.")
+        logger.info(f"Final pool contains {len(self.pool)} options.")
         return self.pool[:5]
 
     def _enrich_component(self, component: Component):
@@ -68,6 +92,7 @@ class AgnesAgent:
             component.text = specs.get("text", component.text)
             component.certificates = list(set(component.certificates + specs.get("certificates", [])))
             component.allergens = list(set(component.allergens + specs.get("allergens", [])))
+            db.update_product_enrichment(component)
 
         # Enrich supplier info if missing
         if not supplier.ethics or not supplier.esg_score:
@@ -76,19 +101,13 @@ class AgnesAgent:
             supplier.ethics = ethics_data.get("ethics", supplier.ethics)
             supplier.esg_score = ethics_data.get("esg_score", supplier.esg_score)
             supplier.production_place = ethics_data.get("production_place", supplier.production_place)
+            db.update_supplier_enrichment(supplier)
 
         # Mock negotiation for price and lead time (always do this for demo)
         logger.info(f"Initiating mock negotiation with {supplier.name}...")
         negotiation = tools.generate_mock_negotiation(supplier.name, component.name)
         component.price_per_unit = negotiation.get("price_per_unit", component.price_per_unit)
         component.lead_time = negotiation.get("lead_time", component.lead_time)
+        db.update_product_enrichment(component)
         
         logger.info(f"Enrichment complete for {component.name}.")
-
-def make_decision(components: List[Component]) -> Component:
-    """Mock the decision system for now."""
-    print("--- Decision System ---")
-    if not components:
-        return None
-    # Just return the one with best quality/price ratio or first one
-    return components[0]
