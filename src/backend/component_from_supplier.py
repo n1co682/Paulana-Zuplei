@@ -7,21 +7,21 @@ class ComponentFromSupplier:
                  certificates: List[str], allergents: List[str], lead_time: float, 
                  lead_time_score: float, equivalence_class: str):
 
-        self.supplier_name = supplier_name
-        self.price_per_unit = price_per_unit
-        self.price_scaled = price_scaled
-        self.quality = quality
-        self.quality_report = quality_report
-        self.production_place = production_place
-        self.resilience_score = resilience_score
-        self.ethics_score = ethics_score
-        self.ethics_report = ethics_report
-        self.esg_score = esg_score
-        self.certificates = certificates
-        self.allergents = allergents
-        self.lead_time = lead_time
-        self.lead_time_score = lead_time_score
-        self.equivalence_class = equivalence_class
+        self.supplier_name = supplier_name # exists in Supplier Class
+        self.price_per_unit = price_per_unit # exists in Supplier Product
+        self.price_scaled = price_scaled # fetch it and compute dynamically
+        self.quality = quality # calculate based on quality report with LLM
+        self.quality_report = quality_report # exists in Supplier Product as Quality
+        self.production_place = production_place # exists in Supplier Product
+        self.resilience_score = resilience_score # calculte based on production_place hard-coded
+        self.ethics_score = ethics_score # fetch it and compute dynamically
+        self.ethics_report = ethics_report # calculate based on quality report with LLM
+        self.esg_score = esg_score # scale to [0,1]
+        self.certificates = certificates # exist in Supplier Product 
+        self.allergents = allergents # exist in Supplier Product
+        self.lead_time = lead_time # exist in supplier product
+        self.lead_time_score = lead_time_score # fetch it and compute dynamically
+        self.equivalence_class = equivalence_class # exist in equivalence table
 
     def _validate_range(self, value, name):
         if not isinstance(value, (int, float)) or not (0 <= value <= 1):
