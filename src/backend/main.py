@@ -65,7 +65,7 @@ def main():
     logger.info("Starting Agnes AI Supply Chain Manager Integration")
     
     # 1. Input Section
-    product_id = 2
+    product_id = 1
     prefs = UserPreferences(price=3, quality=7, sustainability=5, ethics=8, consolidation=4)
     
     print(f"\n{'='*80}")
