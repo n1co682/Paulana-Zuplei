@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Paulana Zuplei - Sourcing Strategy</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#001c39",
+                        "on-surface-variant": "#564336",
+                        "primary": "#964900",
+                        "surface": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#dde9ff",
+                        "surface-container-highest": "#d3e3ff",
+                        "surface-container": "#e6eeff",
+                        "primary-container": "#f58220",
+                        "secondary": "#486081",
+                        "secondary-container": "#c0d9ff",
+                        "on-secondary-container": "#465f80",
+                        "outline": "#8a7264",
+                        "outline-variant": "#ddc1b0",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#b8006c",
+                        "error": "#ba1a1a",
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Space Grotesk", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                        label: ["Space Grotesk", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f9ff;
+            color: #001c39;
+        }
+        h1, h2, h3, h4, h5, h6, .font-headline {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col md:flex-row">
+    <main class="flex-1 w-full flex flex-col min-h-screen px-4 md:px-12 lg:px-24 py-12 relative overflow-hidden items-center">
+        <header class="flex justify-between items-center w-full max-w-4xl mx-auto mb-16 relative z-10">
+            <div class="flex items-center gap-4">
+                <span class="font-headline font-black text-3xl tracking-tighter text-primary">Paulana Zuplei</span>
+            </div>
+        </header>
+        
+        <div class="max-w-4xl mx-auto w-full relative z-10 flex flex-col gap-12">
+            <div class="text-center relative">
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-primary-container rounded-full blur-3xl opacity-20 -z-10 mix-blend-multiply"></div>
+                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-secondary rounded-full blur-3xl opacity-10 -z-10 mix-blend-multiply"></div>
+                <h1 class="font-headline text-[3.5rem] leading-[1.1] font-bold tracking-[-0.02em] mb-4 text-primary">Sourcing Strategy</h1>
+                <p class="text-lg text-on-surface-variant font-medium">Configure parameters for optimal supplier analysis.</p>
+            </div>
+            
+            <form action="/analyze" method="POST" class="contents">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-5 flex flex-col gap-8">
+                        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)] relative overflow-hidden group">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl"></div>
+                            <label class="block font-headline font-semibold text-lg text-on-surface mb-3">Add Materials</label>
+                            <div class="relative flex flex-col">
+                                <textarea id="materialsInput" name="materials" class="w-full bg-surface-container-low text-on-surface border-none rounded-lg py-4 pl-4 pr-4 focus:ring-0 focus:bg-surface-container-highest transition-colors font-body min-h-[120px] resize-none" placeholder="Enter materials (one per line):&#10;Material Name, Category, Quantity&#10;e.g., Sodium Chloride, Preservative, 100 MT" spellcheck="false"></textarea>
+                                <div class="flex justify-end gap-2 mt-3">
+                                    <button type="button" onclick="clearMaterialsInput()" class="text-secondary hover:text-error transition-colors text-sm font-medium px-3 py-1">Clear</button>
+                                    <button type="button" onclick="addMaterialsToBOM()" class="bg-primary text-on-primary hover:bg-primary-container transition-colors text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-sm">add</span>
+                                        Add to BOM
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)]">
+                            <label class="block font-headline font-semibold text-lg text-on-surface mb-3 flex items-center justify-between">
+                                Compliance Framework
+                                <span class="material-symbols-outlined text-tertiary text-sm">info</span>
+                            </label>
+                            <div class="relative">
+                                <select name="compliance" class="w-full bg-surface-container-low text-on-surface border-none rounded-lg py-4 pl-4 pr-10 appearance-none focus:ring-0 focus:bg-surface-container-highest transition-colors font-body cursor-pointer">
+                                    <option>FDA / GRAS Standard</option>
+                                    <option>EU Organic Certification</option>
+                                    <option>Fair Trade Global</option>
+                                    <option>ISO 22000 Food Safety</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-8 shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)] relative">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="font-headline font-semibold text-2xl text-on-surface">Bill of Materials (BOM)</h2>
+                            <span id="bomCount" class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">4 Items</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div id="bomList" class="max-h-[320px] overflow-y-auto pr-2 space-y-3">
+                                <label class="flex items-center p-4 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors group">
+                                    <div class="relative flex items-center justify-center w-6 h-6 mr-4">
+                                        <input checked name="bom_items" value="cane-sugar" class="peer appearance-none w-5 h-5 border-2 border-outline rounded text-primary bg-surface-container-lowest checked:bg-primary checked:border-primary focus:ring-primary focus:ring-offset-surface transition-all" type="checkbox"/>
+                                        <span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none" style="font-variation-settings: 'FILL' 1;">check</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="font-medium text-on-surface block group-hover:text-primary transition-colors">Cane Sugar</span>
+                                        <span class="text-xs text-on-surface-variant">Bulk Sweetener • 10,000 MT</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center p-4 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors group">
+                                    <div class="relative flex items-center justify-center w-6 h-6 mr-4">
+                                        <input checked name="bom_items" value="citric-acid" class="peer appearance-none w-5 h-5 border-2 border-outline rounded text-primary bg-surface-container-lowest checked:bg-primary checked:border-primary focus:ring-primary focus:ring-offset-surface transition-all" type="checkbox"/>
+                                        <span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none" style="font-variation-settings: 'FILL' 1;">check</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="font-medium text-on-surface block group-hover:text-primary transition-colors">Citric Acid</span>
+                                        <span class="text-xs text-on-surface-variant">Acidulant • 500 MT</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center p-4 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors group">
+                                    <div class="relative flex items-center justify-center w-6 h-6 mr-4">
+                                        <input checked name="bom_items" value="caramel-color" class="peer appearance-none w-5 h-5 border-2 border-outline rounded text-primary bg-surface-container-lowest checked:bg-primary checked:border-primary focus:ring-primary focus:ring-offset-surface transition-all" type="checkbox"/>
+                                        <span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none" style="font-variation-settings: 'FILL' 1;">check</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="font-medium text-on-surface block group-hover:text-primary transition-colors">Caramel Color (Class IV)</span>
+                                        <span class="text-xs text-on-surface-variant">Colorant • 250 MT</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="flex items-center p-4 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors group">
+                                    <div class="relative flex items-center justify-center w-6 h-6 mr-4">
+                                        <input name="bom_items" value="natural-caffeine" class="peer appearance-none w-5 h-5 border-2 border-outline rounded text-primary bg-surface-container-lowest checked:bg-primary checked:border-primary focus:ring-primary focus:ring-offset-surface transition-all" type="checkbox"/>
+                                        <span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none" style="font-variation-settings: 'FILL' 1;">check</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="font-medium text-on-surface block group-hover:text-primary transition-colors">Natural Caffeine</span>
+                                        <span class="text-xs text-on-surface-variant">Stimulant • 50 MT</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)] relative overflow-hidden flex flex-col items-center">
+                    <h3 class="font-headline font-semibold text-xl text-on-surface mb-8 w-full text-left">Optimization Vectors</h3>
+                    <div class="relative w-80 h-80 flex items-center justify-center my-4">
+                        <canvas id="radarCanvas" width="320" height="320" class="absolute inset-0 cursor-pointer"></canvas>
+                        <span class="absolute -top-6 text-xs font-bold text-on-surface-variant tracking-wider uppercase pointer-events-none">Price</span>
+                        <span class="absolute top-[12%] -right-14 text-xs font-bold text-on-surface-variant tracking-wider uppercase text-right pointer-events-none">Quality</span>
+                        <span class="absolute bottom-[12%] -right-16 text-xs font-bold text-on-surface-variant tracking-wider uppercase text-right pointer-events-none">Resilience</span>
+                        <span class="absolute -bottom-6 text-xs font-bold text-on-surface-variant tracking-wider uppercase pointer-events-none">Sustainability</span>
+                        <span class="absolute bottom-[12%] -left-10 text-xs font-bold text-on-surface-variant tracking-wider uppercase pointer-events-none">Ethics</span>
+                        <span class="absolute top-[12%] -left-16 text-xs font-bold text-on-surface-variant tracking-wider uppercase pointer-events-none">Lead Time</span>
+                    </div>
+                    <p class="text-sm text-center text-on-surface-variant mt-8 max-w-md">Drag nodes to weigh priority vectors for the algorithmic analysis model.</p>
+                    
+                    <!-- Hidden inputs for form submission -->
+                    <input type="hidden" name="vector_price" id="vector_price" value="0.7">
+                    <input type="hidden" name="vector_quality" id="vector_quality" value="0.6">
+                    <input type="hidden" name="vector_resilience" id="vector_resilience" value="0.5">
+                    <input type="hidden" name="vector_sustainability" id="vector_sustainability" value="0.8">
+                    <input type="hidden" name="vector_ethics" id="vector_ethics" value="0.65">
+                    <input type="hidden" name="vector_leadtime" id="vector_leadtime" value="0.55">
+                </div>
+                
+                <script>
+                function clearMaterialsInput() {
+                    document.getElementById('materialsInput').value = '';
+                }
+                
+                function updateBOMCount() {
+                    const bomList = document.getElementById('bomList');
+                    const count = bomList.querySelectorAll('input[type="checkbox"]').length;
+                    document.getElementById('bomCount').textContent = count + ' Item' + (count !== 1 ? 's' : '');
+                }
+                
+                function addMaterialsToBOM() {
+                    const input = document.getElementById('materialsInput');
+                    const text = input.value.trim();
+                    
+                    if (!text) {
+                        alert('Please enter at least one material.');
+                        return;
+                    }
+                    
+                    const bomList = document.getElementById('bomList');
+                    const lines = text.split('\n').filter(line => line.trim());
+                    let addedCount = 0;
+                    
+                    lines.forEach(line => {
+                        const parts = line.split(',').map(p => p.trim());
+                        const name = parts[0];
+                        const category = parts[1] || 'Material';
+                        const quantity = parts[2] || 'TBD';
+                        
+                        if (!name) return;
+                        
+                        // Generate a unique value for the checkbox
+                        const value = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        
+                        // Check if material already exists
+                        const existingInputs = bomList.querySelectorAll('input[type="checkbox"]');
+                        let exists = false;
+                        existingInputs.forEach(inp => {
+                            if (inp.value === value) exists = true;
+                        });
+                        
+                        if (exists) return;
+                        
+                        // Create new BOM item
+                        const itemHtml = `
+                            <label class="flex items-center p-4 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors group">
+                                <div class="relative flex items-center justify-center w-6 h-6 mr-4">
+                                    <input checked name="bom_items" value="${value}" class="peer appearance-none w-5 h-5 border-2 border-outline rounded text-primary bg-surface-container-lowest checked:bg-primary checked:border-primary focus:ring-primary focus:ring-offset-surface transition-all" type="checkbox"/>
+                                    <span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none" style="font-variation-settings: 'FILL' 1;">check</span>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="font-medium text-on-surface block group-hover:text-primary transition-colors">${name}</span>
+                                    <span class="text-xs text-on-surface-variant">${category} • ${quantity}</span>
+                                </div>
+                                <button type="button" onclick="removeBOMItem(this)" class="opacity-0 group-hover:opacity-100 text-error hover:text-error/80 transition-all ml-2">
+                                    <span class="material-symbols-outlined text-lg">close</span>
+                                </button>
+                            </label>
+                        `;
+                        
+                        bomList.insertAdjacentHTML('beforeend', itemHtml);
+                        addedCount++;
+                    });
+                    
+                    if (addedCount > 0) {
+                        updateBOMCount();
+                        input.value = '';
+                    } else {
+                        alert('No new materials were added. Materials may already exist in the BOM.');
+                    }
+                }
+                
+                function removeBOMItem(button) {
+                    const label = button.closest('label');
+                    label.remove();
+                    updateBOMCount();
+                }
+                </script>
+                
+                <script>
+                (function() {
+                    const canvas = document.getElementById('radarCanvas');
+                    const ctx = canvas.getContext('2d');
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    const maxRadius = 140;
+                    const minRadius = 20;
+                    
+                    const axes = [
+                        { name: 'price', angle: -Math.PI / 2, value: 0.7 },
+                        { name: 'quality', angle: -Math.PI / 2 + Math.PI / 3, value: 0.6 },
+                        { name: 'resilience', angle: -Math.PI / 2 + 2 * Math.PI / 3, value: 0.5 },
+                        { name: 'sustainability', angle: -Math.PI / 2 + Math.PI, value: 0.8 },
+                        { name: 'ethics', angle: -Math.PI / 2 + 4 * Math.PI / 3, value: 0.65 },
+                        { name: 'leadtime', angle: -Math.PI / 2 + 5 * Math.PI / 3, value: 0.55 }
+                    ];
+                    
+                    let draggingIndex = -1;
+                    let hoveredIndex = -1;
+                    
+                    function getVertexPosition(axis) {
+                        const radius = minRadius + (maxRadius - minRadius) * axis.value;
+                        return {
+                            x: centerX + Math.cos(axis.angle) * radius,
+                            y: centerY + Math.sin(axis.angle) * radius
+                        };
+                    }
+                    
+                    function draw() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Draw concentric circles
+                        ctx.strokeStyle = 'rgba(138, 114, 100, 0.2)';
+                        ctx.lineWidth = 1;
+                        for (let i = 1; i <= 5; i++) {
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, minRadius + (maxRadius - minRadius) * (i / 5), 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                        
+                        // Draw center circle
+                        ctx.fillStyle = 'rgba(239, 244, 255, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, minRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Draw axis lines
+                        ctx.strokeStyle = 'rgba(138, 114, 100, 0.3)';
+                        ctx.lineWidth = 1;
+                        axes.forEach(axis => {
+                            ctx.beginPath();
+                            ctx.moveTo(centerX, centerY);
+                            ctx.lineTo(
+                                centerX + Math.cos(axis.angle) * maxRadius,
+                                centerY + Math.sin(axis.angle) * maxRadius
+                            );
+                            ctx.stroke();
+                        });
+                        
+                        // Draw polygon fill
+                        ctx.fillStyle = 'rgba(245, 130, 32, 0.2)';
+                        ctx.strokeStyle = '#964900';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        axes.forEach((axis, i) => {
+                            const pos = getVertexPosition(axis);
+                            if (i === 0) ctx.moveTo(pos.x, pos.y);
+                            else ctx.lineTo(pos.x, pos.y);
+                        });
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        // Draw vertices
+                        axes.forEach((axis, i) => {
+                            const pos = getVertexPosition(axis);
+                            const isActive = draggingIndex === i || hoveredIndex === i;
+                            
+                            // Outer glow for active vertex
+                            if (isActive) {
+                                ctx.fillStyle = 'rgba(245, 130, 32, 0.3)';
+                                ctx.beginPath();
+                                ctx.arc(pos.x, pos.y, 16, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                            
+                            // Vertex circle
+                            ctx.fillStyle = isActive ? '#f58220' : '#964900';
+                            ctx.beginPath();
+                            ctx.arc(pos.x, pos.y, isActive ? 10 : 8, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            // Inner dot
+                            ctx.fillStyle = '#ffffff';
+                            ctx.beginPath();
+                            ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        });
+                        
+                        // Draw center point
+                        ctx.fillStyle = '#486081';
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    function getMousePos(e) {
+                        const rect = canvas.getBoundingClientRect();
+                        const scaleX = canvas.width / rect.width;
+                        const scaleY = canvas.height / rect.height;
+                        return {
+                            x: (e.clientX - rect.left) * scaleX,
+                            y: (e.clientY - rect.top) * scaleY
+                        };
+                    }
+                    
+                    function findClosestVertex(pos) {
+                        let closest = -1;
+                        let minDist = 25;
+                        axes.forEach((axis, i) => {
+                            const vPos = getVertexPosition(axis);
+                            const dist = Math.sqrt((pos.x - vPos.x) ** 2 + (pos.y - vPos.y) ** 2);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                closest = i;
+                            }
+                        });
+                        return closest;
+                    }
+                    
+                    function updateValue(index, mousePos) {
+                        const axis = axes[index];
+                        const dx = mousePos.x - centerX;
+                        const dy = mousePos.y - centerY;
+                        
+                        // Project mouse position onto axis direction
+                        const axisDirX = Math.cos(axis.angle);
+                        const axisDirY = Math.sin(axis.angle);
+                        const projection = dx * axisDirX + dy * axisDirY;
+                        
+                        // Convert to 0-1 value
+                        let value = (projection - minRadius) / (maxRadius - minRadius);
+                        value = Math.max(0, Math.min(1, value));
+                        
+                        axes[index].value = value;
+                        
+                        // Update hidden input
+                        const input = document.getElementById('vector_' + axis.name);
+                        if (input) input.value = value.toFixed(2);
+                    }
+                    
+                    canvas.addEventListener('mousedown', (e) => {
+                        const pos = getMousePos(e);
+                        draggingIndex = findClosestVertex(pos);
+                        if (draggingIndex >= 0) {
+                            canvas.style.cursor = 'grabbing';
+                        }
+                        draw();
+                    });
+                    
+                    canvas.addEventListener('mousemove', (e) => {
+                        const pos = getMousePos(e);
+                        
+                        if (draggingIndex >= 0) {
+                            updateValue(draggingIndex, pos);
+                            draw();
+                        } else {
+                            const newHovered = findClosestVertex(pos);
+                            if (newHovered !== hoveredIndex) {
+                                hoveredIndex = newHovered;
+                                canvas.style.cursor = hoveredIndex >= 0 ? 'grab' : 'default';
+                                draw();
+                            }
+                        }
+                    });
+                    
+                    canvas.addEventListener('mouseup', () => {
+                        draggingIndex = -1;
+                        canvas.style.cursor = hoveredIndex >= 0 ? 'grab' : 'default';
+                        draw();
+                    });
+                    
+                    canvas.addEventListener('mouseleave', () => {
+                        draggingIndex = -1;
+                        hoveredIndex = -1;
+                        canvas.style.cursor = 'default';
+                        draw();
+                    });
+                    
+                    // Touch support
+                    canvas.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const pos = getMousePos(touch);
+                        draggingIndex = findClosestVertex(pos);
+                        draw();
+                    });
+                    
+                    canvas.addEventListener('touchmove', (e) => {
+                        e.preventDefault();
+                        if (draggingIndex >= 0) {
+                            const touch = e.touches[0];
+                            const pos = getMousePos(touch);
+                            updateValue(draggingIndex, pos);
+                            draw();
+                        }
+                    });
+                    
+                    canvas.addEventListener('touchend', () => {
+                        draggingIndex = -1;
+                        draw();
+                    });
+                    
+                    // Initial draw
+                    draw();
+                })();
+                </script>
+                
+                <div class="flex justify-center mt-8">
+                    <button type="submit" class="bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-full py-4 px-12 font-label text-lg uppercase tracking-[0.05em] font-bold shadow-[0_12px_24px_-8px_rgba(245,130,32,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-3 group relative overflow-hidden">
+                        <span class="relative z-10">Analyze Sourcing Options</span>
+                        <span class="material-symbols-outlined relative z-10 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
