@@ -219,5 +219,6 @@ dist-frontend/
 
 # Local data and model artifacts
 data/temp/
+data/**.json
 models/
 artifacts/
