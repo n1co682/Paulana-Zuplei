@@ -147,9 +147,10 @@ class DatabaseManager:
             )
 
     def populate_stage_mode_bom(self, bom_data: list):
-        """Upsert stage mode BOM entries so /bom returns stage data."""
+        """Replace BOM for product_id=1 with stage mode data."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            cursor.execute("DELETE FROM BOM WHERE ProductID = 1")
             for entry in bom_data:
                 eq_id = entry["equivalence_class_id"]
                 comp_id = entry["component_id"]
