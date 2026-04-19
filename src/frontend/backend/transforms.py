@@ -1,4 +1,18 @@
-from typing import List
+def parse_quality(q) -> float:
+    """BOM quality field can be a float OR a string like 'Quality Grade A: ...'."""
+    if q is None:
+        return 0.5
+    try:
+        return float(q)
+    except (ValueError, TypeError):
+        s = str(q).upper()
+        if "GRADE A" in s:
+            return 0.85
+        if "GRADE B" in s:
+            return 0.65
+        if "GRADE C" in s:
+            return 0.45
+        return 0.5
 
 
 def esg_to_letter(esg) -> str:
@@ -54,7 +68,7 @@ def vectors_to_prefs(price, quality, resilience, sustainability, ethics, lead_ti
 def classify(bom_entry: dict, top_option: dict) -> str:
     """Critical if any single score improves by > 0.20 vs current BOM entry."""
     top_comp = top_option.get("component", {})
-    cur_q = float(bom_entry.get("quality") or 0.5)
+    cur_q = parse_quality(bom_entry.get("quality"))
     cur_eth = float(bom_entry.get("esg_score") or 50) / 100.0
     cur_lead_h = float(bom_entry.get("lead_time") or 72)
     cur_lead_score = 1.0 - min(cur_lead_h / 720.0, 1.0)
@@ -76,7 +90,7 @@ def best_improvement(bom_entry: dict, top_comp: dict, total_score: float) -> str
     cand_price = float(top_comp.get("price_per_unit") or 0)
     if cur_price and cand_price and cand_price < cur_price * 0.95:
         return f"-{int(round((1 - cand_price / cur_price) * 100))}% Price"
-    cur_q = float(bom_entry.get("quality") or 0.5)
+    cur_q = parse_quality(bom_entry.get("quality"))
     cand_q = float(top_comp.get("quality") or 0.5)
     if cand_q > cur_q + 0.05:
         return f"+{int(round((cand_q - cur_q) * 100))}% Quality"

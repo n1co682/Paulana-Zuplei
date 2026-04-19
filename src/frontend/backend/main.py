@@ -16,6 +16,7 @@ from transforms import (
     dollars_to_str,
     esg_to_letter,
     hours_to_days_str,
+    parse_quality,
     quality_to_grade,
     to_five,
     to_rate,
@@ -59,6 +60,13 @@ async def start_page(request: Request):
             bom_items = resp.json()
         except Exception as e:
             logger.error(f"Failed to fetch BOM from backend: {e}")
+
+    # De-duplicate: keep first row per component_id (one row per supplier in the JOIN)
+    seen: dict = {}
+    for item in bom_items:
+        if item["component_id"] not in seen:
+            seen[item["component_id"]] = item
+    bom_items = list(seen.values())
 
     return templates.TemplateResponse(
         request=request,
@@ -144,7 +152,7 @@ async def analyze_sourcing(
 
         # Build current supplier profile from BOM entry
         cur_price_raw = float(bom_entry.get("price") or 0.0)
-        cur_quality = float(bom_entry.get("quality") or 0.5)
+        cur_quality = parse_quality(bom_entry.get("quality"))
         cur_esg = bom_entry.get("esg_score") or 50
         cur_lead = bom_entry.get("lead_time")
 

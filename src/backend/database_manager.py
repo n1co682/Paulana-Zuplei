@@ -1,12 +1,15 @@
 import sqlite3
 import logging
+from pathlib import Path
 from typing import List, Dict, Optional
 from models import Component, Supplier
 
 logger = logging.getLogger("agnes.db")
 
+_DEFAULT_DB = str(Path(__file__).parent.parent.parent / "data" / "db_new.sqlite")
+
 class DatabaseManager:
-    def __init__(self, db_path: str = "data/db_new.sqlite"):
+    def __init__(self, db_path: str = _DEFAULT_DB):
         self.db_path = db_path
 
     def _get_connection(self):
