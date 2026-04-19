@@ -69,6 +69,35 @@ The recommendation logic is entirely rule-based and deterministic. AI is used on
 - **`pipeline.py`** -- Filters candidates by hard constraints and evaluates all valid combinatorial configurations, sorted by weighted score
 - **`main.py`** -- Entrypoint: fetches BOM from DB, runs our system per equivalence class, and prints the top 3 configurations with dimension scores
 
+## Running the Application
+
+Install all dependencies from the repo root:
+
+```bash
+pip install -e .
+```
+
+Then start both services in separate terminals:
+
+**Terminal 1 — Backend (port 8000):**
+```bash
+cd src/backend
+uvicorn main:app --port 8000 --reload
+```
+
+**Terminal 2 — Frontend (port 8001):**
+```bash
+cd src/frontend/backend
+uvicorn main:app --port 8001 --reload
+```
+
+Open [http://localhost:8001](http://localhost:8001) in your browser.
+
+The frontend proxies the backend. If the backend runs on a different port, set `BACKEND_URL` before starting the frontend:
+```bash
+BACKEND_URL=http://localhost:9000 uvicorn main:app --port 8001
+```
+
 ## What We Did Not Implement
 
 - **Compliance inference from product context.** We handle hard constraints (certificates, allergens) as explicit filters, but do not yet reason about whether a substitute is acceptable given the regulatory context of the finished product.
