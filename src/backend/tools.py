@@ -47,6 +47,10 @@ class QualityComparisonResponse(BaseModel):
     rationale: str = Field(..., description="Brief explanation of the ranking")
 
 
+class ReplacementReasoningResponse(BaseModel):
+    reasoning: str = Field(..., description="Context-aware reasoning for the top 3 candidates.")
+
+
 def _call_gemini_structured(prompt: str, schema: Type[T], web_search: bool = False) -> T:
     logger.info(f"Requesting structured data for {schema.__name__} (web_search={web_search})")
     payload = _gemini.generate_json(
@@ -190,3 +194,37 @@ def compare_quality_pool(contenders: List[Dict]) -> Dict[str, float]:
     except Exception as e:
         logger.error(f"Comparative quality failed: {e}. Using default scores.")
         return {c['supplier_name']: 0.8 for c in contenders}
+
+
+def generate_replacement_reasoning(component_name: str, candidates: List[Dict], rest_of_bom: List[Dict]) -> str:
+    """Generate context-aware reasoning for top 3 candidates."""
+    cand_info = ""
+    for i, c in enumerate(candidates, 1):
+        cand_info += (
+            f"Candidate #{i}: {c['supplier_name']}\n"
+            f"Score: {c['total_score']:.2f} (Price: {c['p_score']:.2f}, Quality: {c['q_score']:.2f}, "
+            f"Resilience: {c['r_score']:.2f}, Consolidation: {c['c_score']:.2f})\n"
+            f"Location: {c['production_place']}\n"
+            f"Specs: {c['quality_report']}\n---\n"
+        )
+
+    bom_info = ", ".join([f"{b['component_name']} ({b['supplier_name']})" for b in rest_of_bom])
+
+    prompt = (
+        f"**Task:** Provide a concise, professional reasoning for the top 3 replacement candidates for '{component_name}'.\n"
+        f"**Context:** The current BOM includes: {bom_info}.\n"
+        f"**Candidates:**\n{cand_info}\n"
+        f"**Instructions:**\n"
+        f"1. Generate reasoning for Top 1, Top 2, and Top 3 in a single narrative that shares context.\n"
+        f"2. Mention how each candidate fits into the existing BOM (e.g., supplier consolidation).\n"
+        f"3. Evaluate geographical resilience (e.g., risks from dependence on certain shipping corridors or straits based on the location).\n"
+        f"4. Format as: 'Top 1: ... Top 2: ... Top 3: ...'\n"
+        f"Return JSON object with key 'reasoning'."
+    )
+
+    try:
+        result = _call_gemini_structured(prompt, ReplacementReasoningResponse, web_search=True)
+        return result.reasoning
+    except Exception as e:
+        logger.error(f"Reasoning generation failed: {e}")
+        return "Reasoning could not be generated at this time."
