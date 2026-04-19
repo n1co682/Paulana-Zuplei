@@ -12,9 +12,6 @@ logger = logging.getLogger("agnes.gemini")
 
 load_dotenv()
 
-_DEFAULT_API_KEY = "AQ.Ab8RN6J02bBr8NIcgiTcxaNh0lC6G_n7mAI2cLCkJbIwaY_QMA"
-
-
 class GeminiClient:
     """Encapsulates all google.genai / Vertex AI dependencies."""
 
@@ -31,7 +28,7 @@ class GeminiClient:
         from google.genai import types
 
         self._types = types
-        api_key = os.getenv("GOOGLE_API_KEY", _DEFAULT_API_KEY)
+        api_key = os.getenv("GOOGLE_API_KEY")
         self._timeout_seconds = timeout_seconds
         self._max_retries = max_retries
         self._base_backoff_seconds = base_backoff_seconds
