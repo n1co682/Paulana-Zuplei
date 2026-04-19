@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Ingredient Comparison - Paulana Zuplei</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-highest": "#d3e3ff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-high": "#dde9ff",
+                        "outline-variant": "#ddc1b0",
+                        "on-error": "#ffffff",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "inverse-primary": "#ffb786",
+                        "secondary-fixed-dim": "#afc8ee",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#964900",
+                        "on-surface-variant": "#564336",
+                        "on-secondary-fixed-variant": "#2f4868",
+                        "on-tertiary-fixed": "#3e0021",
+                        "tertiary-fixed-dim": "#ffb0cc",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb786",
+                        "outline": "#8a7264",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#465f80",
+                        "primary-container": "#f58220",
+                        "tertiary-container": "#ff6ead",
+                        "secondary": "#486081",
+                        "primary": "#964900",
+                        "inverse-on-surface": "#ebf1ff",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#8d0051",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#5b2a00",
+                        "tertiary": "#b8006c",
+                        "primary-fixed": "#ffdcc6",
+                        "on-tertiary-container": "#710040",
+                        "on-primary-fixed": "#311300",
+                        "tertiary-fixed": "#ffd9e4",
+                        "inverse-surface": "#173150",
+                        "surface-variant": "#d3e3ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#c5dbff",
+                        "secondary-container": "#c0d9ff",
+                        "surface": "#f8f9ff",
+                        "on-surface": "#001c39",
+                        "on-primary-fixed-variant": "#723600",
+                        "on-background": "#001c39",
+                        "on-secondary-fixed": "#001c39"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Space Grotesk", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                        label: ["Space Grotesk", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ambient-shadow {
+            box-shadow: 0 20px 40px -10px rgba(0, 28, 57, 0.06);
+        }
+        .ambient-shadow-primary {
+            box-shadow: 0 20px 48px -12px rgba(245, 130, 32, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col md:flex-row selection:bg-tertiary selection:text-white">
+    <main class="flex-1 w-full flex flex-col min-h-screen px-4 md:px-12 lg:px-24 py-12 relative overflow-hidden items-center">
+        <header class="flex justify-between items-center w-full max-w-5xl mx-auto mb-16 relative z-10">
+            <span class="font-headline font-black text-3xl tracking-tighter text-primary">Paulana Zuplei</span>
+            <a class="flex items-center gap-2 text-primary font-label font-bold text-sm tracking-widest hover:opacity-80 transition-opacity" href="/results/analysis">
+                <span class="material-symbols-outlined font-bold">arrow_back</span>
+                <span>BACK</span>
+            </a>
+        </header>
+        
+        <div class="max-w-5xl mx-auto w-full relative z-10 flex flex-col gap-12">
+            <div class="text-center relative">
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-primary-container rounded-full blur-3xl opacity-20 -z-10 mix-blend-multiply"></div>
+                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-secondary rounded-full blur-3xl opacity-10 -z-10 mix-blend-multiply"></div>
+                <h1 class="font-headline text-[3.5rem] leading-[1.1] font-bold text-primary tracking-[-0.02em] mb-4">Ingredient Comparison</h1>
+                <p class="text-lg text-on-surface-variant font-medium">{{ comparison.ingredient if comparison else "Industrial Grade Silicon" }}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 relative">
+                <!-- Current Supplier Card -->
+                <div class="bg-surface-container-low rounded-[2rem] p-8 md:p-12 flex flex-col relative overflow-hidden transition-all duration-500 hover:bg-surface-container shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)]">
+                    <div class="mb-10">
+                        <span class="inline-block px-4 py-1.5 rounded-full bg-secondary/10 text-secondary font-label text-xs uppercase tracking-widest font-bold mb-6">Current Sourcing</span>
+                        <h2 class="font-headline text-3xl md:text-4xl font-medium text-on-surface">{{ comparison.current_supplier.name if comparison else "GlobalTech Materials" }}</h2>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-10 gap-x-8">
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Price Per Unit</span>
+                            <span class="text-4xl font-headline font-light text-on-surface">{{ comparison.current_supplier.price if comparison else "$14.50" }}</span>
+                            <span class="text-sm text-secondary-container-on mt-1 italic">Scaled: {{ comparison.current_supplier.scaled_price if comparison else "$142,000 / mo" }}</span>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Quality Rate</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-headline font-light text-on-surface">{{ comparison.current_supplier.quality_rate if comparison else "92" }}<span class="text-2xl text-secondary">%</span></span>
+                            </div>
+                            <a class="inline-flex items-center gap-1 text-primary hover:text-primary-container transition-colors text-sm mt-1 font-medium group" href="#">
+                                <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">description</span>
+                                View Q2 Report
+                            </a>
+                        </div>
+                        <div class="col-span-2 flex flex-col gap-1 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Production Origin</span>
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-secondary">location_on</span>
+                                <span class="text-xl font-body text-on-surface">{{ comparison.current_supplier.location if comparison else "Shenzhen, Guangdong, CN" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Resilience Score</span>
+                            <div class="flex gap-1.5 items-center">
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary/30 relative overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 w-1/2 bg-primary rounded-l-full"></div>
+                                </div>
+                                <div class="w-8 h-2 rounded-full bg-outline-variant/30"></div>
+                                <div class="w-8 h-2 rounded-full bg-outline-variant/30"></div>
+                                <span class="ml-2 font-headline text-lg font-medium text-on-surface">{{ comparison.current_supplier.resilience_score if comparison else "2.5" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Ethics Score</span>
+                            <div class="flex gap-1.5 items-center">
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-outline-variant/30"></div>
+                                <div class="w-8 h-2 rounded-full bg-outline-variant/30"></div>
+                                <span class="ml-2 font-headline text-lg font-medium text-on-surface">{{ comparison.current_supplier.ethics_score if comparison else "3.0" }}</span>
+                            </div>
+                            <a class="inline-flex items-center gap-1 text-primary hover:text-primary-container transition-colors text-sm mt-1 font-medium group" href="#">
+                                <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">verified_user</span>
+                                Audit Summary
+                            </a>
+                        </div>
+                        <div class="col-span-2 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Certificates &amp; ESG</span>
+                            <div class="flex flex-wrap items-center gap-4">
+                                <span class="text-2xl font-headline font-bold text-on-surface mr-2">{{ comparison.current_supplier.esg_rating if comparison else "B-" }} <span class="text-sm text-secondary font-body font-normal">ESG Rating</span></span>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface text-on-surface-variant font-label text-xs uppercase tracking-wide border border-outline-variant/15">
+                                    <span class="material-symbols-outlined text-base">factory</span> ISO 9001
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 flex justify-between items-end mt-4 pt-8 border-t border-outline-variant/15">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Lead Time</span>
+                                <span class="text-2xl font-body text-on-surface">{{ comparison.current_supplier.lead_time if comparison else "45 Days" }}</span>
+                            </div>
+                            <div class="flex flex-col gap-1 text-right">
+                                <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Equivalence</span>
+                                <span class="text-lg font-body text-on-surface">{{ comparison.current_supplier.grade if comparison else "Grade B" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recommended Supplier Card -->
+                <div class="bg-gradient-to-br from-surface-container-highest to-surface-container rounded-[2rem] p-8 md:p-12 flex flex-col relative overflow-hidden ambient-shadow-primary transition-all duration-500 hover:-translate-y-2">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+                    <div class="mb-10 relative z-10 flex justify-between items-start">
+                        <div>
+                            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-white font-label text-xs uppercase tracking-widest font-bold mb-6 shadow-lg shadow-primary/20">
+                                <span class="material-symbols-outlined text-sm icon-fill">stars</span>
+                                Recommended
+                            </span>
+                            <h2 class="font-headline text-3xl md:text-4xl font-medium text-primary">{{ comparison.recommended_supplier.name if comparison else "Nordic Silicon AB" }}</h2>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-10 gap-x-8 relative z-10">
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Price Per Unit</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-headline font-bold text-on-surface">{{ comparison.recommended_supplier.price if comparison else "$15.10" }}</span>
+                                <span class="material-symbols-outlined text-error text-sm" title="Higher than current">trending_up</span>
+                            </div>
+                            <span class="text-sm text-secondary mt-1 italic">Scaled: {{ comparison.recommended_supplier.scaled_price if comparison else "$148,000 / mo" }}</span>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Quality Rate</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-headline font-bold text-on-surface">{{ comparison.recommended_supplier.quality_rate if comparison else "99" }}<span class="text-2xl text-secondary">%</span></span>
+                                <span class="material-symbols-outlined text-primary text-sm icon-fill">verified</span>
+                            </div>
+                            <a class="inline-flex items-center gap-1 text-primary hover:text-primary-container transition-colors text-sm mt-1 font-medium group" href="#">
+                                <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">description</span>
+                                View Q3 Report
+                            </a>
+                        </div>
+                        <div class="col-span-2 flex flex-col gap-1 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Production Origin</span>
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">location_on</span>
+                                <span class="text-xl font-body text-on-surface font-medium">{{ comparison.recommended_supplier.location if comparison else "Malmö, Skåne, SE" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Resilience Score</span>
+                            <div class="flex gap-1.5 items-center">
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary/80 relative overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 w-4/5 bg-primary rounded-l-full"></div>
+                                </div>
+                                <span class="ml-2 font-headline text-lg font-bold text-primary">{{ comparison.recommended_supplier.resilience_score if comparison else "4.8" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 md:col-span-1 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Ethics Score</span>
+                            <div class="flex gap-1.5 items-center">
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary"></div>
+                                <div class="w-8 h-2 rounded-full bg-primary/90 relative overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 w-[90%] bg-primary rounded-l-full"></div>
+                                </div>
+                                <span class="ml-2 font-headline text-lg font-bold text-primary">{{ comparison.recommended_supplier.ethics_score if comparison else "4.9" }}</span>
+                            </div>
+                            <a class="inline-flex items-center gap-1 text-primary hover:text-primary-container transition-colors text-sm mt-1 font-medium group" href="#">
+                                <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">verified_user</span>
+                                Audit Summary
+                            </a>
+                        </div>
+                        <div class="col-span-2 flex flex-col gap-2 mt-4">
+                            <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Certificates &amp; ESG</span>
+                            <div class="flex flex-wrap items-center gap-4">
+                                <span class="text-2xl font-headline font-bold text-primary mr-2">{{ comparison.recommended_supplier.esg_rating if comparison else "A+" }} <span class="text-sm text-secondary font-body font-normal">ESG Rating</span></span>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
+                                    <span class="material-symbols-outlined text-base text-tertiary">eco</span> Carbon Neutral
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
+                                    <span class="material-symbols-outlined text-base text-secondary">handshake</span> Fair Trade
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-span-2 flex justify-between items-end mt-4 pt-8 border-t border-outline-variant/30">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Lead Time</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl font-body font-bold text-primary">{{ comparison.recommended_supplier.lead_time if comparison else "14 Days" }}</span>
+                                    <span class="material-symbols-outlined text-tertiary text-sm" title="Significant improvement">trending_down</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1 text-right">
+                                <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Equivalence</span>
+                                <span class="text-lg font-body font-bold text-primary">{{ comparison.recommended_supplier.grade if comparison else "Grade A" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex flex-col items-center justify-center text-center">
+                <p class="text-on-surface-variant text-sm mb-6 max-w-lg mx-auto">Switching to the recommended supplier improves overall supply chain resilience and ESG compliance, despite a marginal cost increase.</p>
+                <button onclick="applyRecommendation()" class="bg-gradient-to-r from-primary to-primary-container text-white font-label rounded-full py-4 px-12 text-lg uppercase tracking-[0.05em] font-bold shadow-[0_12px_24px_-8px_rgba(245,130,32,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-3 group relative overflow-hidden">
+                    <span class="relative z-10">Apply Recommendation</span>
+                    <span class="material-symbols-outlined font-bold relative z-10 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0"></div>
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        async function applyRecommendation() {
+            // Get recommendation ID from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const recommendationId = urlParams.get('id') || 'default-recommendation';
+            
+            try {
+                const response = await fetch('/api/apply-recommendation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ recommendation_id: recommendationId }),
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('Recommendation applied successfully!');
+                    window.location.href = '/results/analysis';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to apply recommendation. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

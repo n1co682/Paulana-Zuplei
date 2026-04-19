@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Sourcing Analysis - Paulana Zuplei</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-highest": "#d3e3ff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-high": "#dde9ff",
+                        "outline-variant": "#ddc1b0",
+                        "on-error": "#ffffff",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "inverse-primary": "#ffb786",
+                        "secondary-fixed-dim": "#afc8ee",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#964900",
+                        "on-surface-variant": "#564336",
+                        "on-secondary-fixed-variant": "#2f4868",
+                        "on-tertiary-fixed": "#3e0021",
+                        "tertiary-fixed-dim": "#ffb0cc",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb786",
+                        "outline": "#8a7264",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#465f80",
+                        "primary-container": "#f58220",
+                        "tertiary-container": "#ff6ead",
+                        "secondary": "#486081",
+                        "primary": "#964900",
+                        "inverse-on-surface": "#ebf1ff",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d3e3ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#8d0051",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#5b2a00",
+                        "tertiary": "#b8006c",
+                        "primary-fixed": "#ffdcc6",
+                        "on-tertiary-container": "#710040",
+                        "on-primary-fixed": "#311300",
+                        "tertiary-fixed": "#ffd9e4",
+                        "inverse-surface": "#173150",
+                        "surface-variant": "#d3e3ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#c5dbff",
+                        "secondary-container": "#c0d9ff",
+                        "surface": "#f8f9ff",
+                        "on-surface": "#001c39",
+                        "on-primary-fixed-variant": "#723600",
+                        "on-background": "#001c39",
+                        "on-secondary-fixed": "#001c39"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Space Grotesk", "sans-serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"],
+                        label: ["Space Grotesk", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8f9ff;
+            color: #001c39;
+        }
+        h1, h2, h3, h4, h5, h6, .font-headline {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col md:flex-row selection:bg-primary-container selection:text-on-primary-container">
+    <main class="flex-1 w-full flex flex-col min-h-screen px-4 md:px-12 lg:px-24 py-12 relative overflow-hidden items-center">
+        <header class="flex justify-between items-center w-full max-w-4xl mx-auto mb-16 relative z-10">
+            <div class="flex items-center gap-4">
+                <span class="font-headline font-black text-3xl tracking-tighter text-primary">Paulana Zuplei</span>
+            </div>
+            <a class="flex items-center gap-2 text-primary font-label font-bold text-sm tracking-widest hover:opacity-80 transition-opacity" href="/">
+                <span class="material-symbols-outlined font-bold">arrow_back</span>
+                <span>BACK</span>
+            </a>
+        </header>
+        
+        <div class="max-w-4xl mx-auto w-full relative z-10 flex flex-col gap-12">
+            <div class="text-center relative">
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-primary-container rounded-full blur-3xl opacity-20 -z-10 mix-blend-multiply"></div>
+                <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-secondary rounded-full blur-3xl opacity-10 -z-10 mix-blend-multiply"></div>
+                <h1 class="font-headline text-[3.5rem] leading-[1.1] font-bold tracking-[-0.02em] mb-4 text-primary">Sourcing Analysis</h1>
+                <p class="text-lg text-on-surface-variant font-medium">Strategic recommendations for ingredient optimization and supplier transitions.</p>
+            </div>
+            
+            <!-- Critical Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-headline font-bold text-on-surface mb-8 border-b-2 border-surface-container-highest pb-4 inline-block">Critical Urgency</h2>
+                <div class="grid grid-cols-1 gap-8">
+                    {% for item in critical_items %}
+                    <div class="bg-surface-container-low rounded-[2rem] p-8 md:p-10 relative overflow-hidden group shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)] {% if item.applied %}opacity-60{% endif %}" data-item-id="{{ item.id }}">
+                        <div class="absolute top-0 right-0 w-32 h-32 {% if item.applied %}bg-secondary-container{% else %}bg-error-container{% endif %} rounded-bl-[4rem] opacity-50 -z-0"></div>
+                        <div class="flex flex-wrap items-center justify-between mb-8 relative z-10 gap-4">
+                            <div class="flex items-center gap-3">
+                                {% if item.applied %}
+                                <span class="bg-secondary text-on-secondary font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    Applied
+                                </span>
+                                {% else %}
+                                <span class="bg-error text-on-error font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold">{{ item.type }}</span>
+                                {% endif %}
+                                <span class="text-sm text-secondary font-medium">{{ item.ingredient }}</span>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-12 mb-8 relative z-10">
+                            <div class="space-y-2">
+                                <p class="text-sm text-on-surface-variant font-medium uppercase tracking-widest">{% if item.applied %}Previous{% else %}Current{% endif %}</p>
+                                <p class="text-2xl font-headline font-bold text-on-surface {% if item.applied %}line-through opacity-50{% endif %}">{{ item.current }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm text-primary font-medium uppercase tracking-widest">{% if item.applied %}Now Active{% else %}Recommended{% endif %}</p>
+                                <p class="text-2xl font-headline font-bold text-primary">{{ item.recommended }}</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface rounded-xl p-6 mb-8 relative z-10 grid md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Improvement Metric</p>
+                                <div class="flex items-center gap-2 text-tertiary font-bold font-headline text-lg">
+                                    <span class="material-symbols-outlined filled text-xl">trending_down</span>
+                                    {{ item.improvement }}
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Considerations</p>
+                                <p class="text-sm text-on-surface font-medium">{{ item.considerations }}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end relative z-10">
+                            {% if item.applied %}
+                            <span class="bg-surface-container-high text-secondary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold cursor-default">Applied</span>
+                            {% else %}
+                            <a href="/results/comparison?id={{ item.id }}" class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 transition-all">View Details</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if not critical_items %}
+                    <div class="bg-surface-container-low rounded-[2rem] p-8 md:p-10 relative overflow-hidden group shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)]">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-error-container rounded-bl-[4rem] opacity-50 -z-0"></div>
+                        <div class="flex flex-wrap items-center justify-between mb-8 relative z-10 gap-4">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-error text-on-error font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold">Supplier Change</span>
+                                <span class="text-sm text-secondary font-medium">Sodium Benzoate</span>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-12 mb-8 relative z-10">
+                            <div class="space-y-2">
+                                <p class="text-sm text-on-surface-variant font-medium uppercase tracking-widest">Current</p>
+                                <p class="text-2xl font-headline font-bold text-on-surface">Apex Materials</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm text-primary font-medium uppercase tracking-widest">Recommended</p>
+                                <p class="text-2xl font-headline font-bold text-primary">NovaSil Industries</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface rounded-xl p-6 mb-8 relative z-10 grid md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Improvement Metric</p>
+                                <div class="flex items-center gap-2 text-tertiary font-bold font-headline text-lg">
+                                    <span class="material-symbols-outlined filled text-xl">trending_down</span>
+                                    -10 days Lead Time
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Considerations</p>
+                                <p class="text-sm text-on-surface font-medium">Requires new quality audit prior to onboarding.</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end relative z-10">
+                            <a href="/results/comparison" class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 transition-all">View Details</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+            
+            <!-- Optimization Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-headline font-bold text-on-surface mb-8 border-b-2 border-surface-container-highest pb-4 inline-block">Optimization Opportunities</h2>
+                <div class="grid grid-cols-1 gap-8">
+                    {% for item in optimization_items %}
+                    <div class="bg-surface-container-low rounded-[2rem] p-8 md:p-10 relative overflow-hidden group shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)] {% if item.applied %}opacity-60{% endif %}" data-item-id="{{ item.id }}">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-secondary-container rounded-bl-[4rem] opacity-50 -z-0"></div>
+                        <div class="flex flex-wrap items-center justify-between mb-8 relative z-10 gap-4">
+                            <div class="flex items-center gap-3">
+                                {% if item.applied %}
+                                <span class="bg-secondary text-on-secondary font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    Applied
+                                </span>
+                                {% else %}
+                                <span class="bg-secondary text-on-secondary font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold">{{ item.type }}</span>
+                                {% endif %}
+                                <span class="text-sm text-secondary font-medium">{{ item.ingredient }}</span>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-12 mb-8 relative z-10">
+                            <div class="space-y-2">
+                                <p class="text-sm text-on-surface-variant font-medium uppercase tracking-widest">{% if item.applied %}Previous{% else %}Current{% endif %}</p>
+                                <p class="text-2xl font-headline font-bold text-on-surface {% if item.applied %}line-through opacity-50{% endif %}">{{ item.current }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm text-primary font-medium uppercase tracking-widest">{% if item.applied %}Now Active{% else %}Recommended{% endif %}</p>
+                                <p class="text-2xl font-headline font-bold text-primary">{{ item.recommended }}</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface rounded-xl p-6 mb-8 relative z-10 grid md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Improvement Metric</p>
+                                <div class="flex items-center gap-2 text-primary font-bold font-headline text-lg">
+                                    <span class="material-symbols-outlined filled text-xl">trending_up</span>
+                                    {{ item.improvement }}
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Considerations</p>
+                                <p class="text-sm text-on-surface font-medium">{{ item.considerations }}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end relative z-10">
+                            {% if item.applied %}
+                            <span class="bg-surface-container-high text-secondary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold cursor-default">Applied</span>
+                            {% else %}
+                            <a href="/results/comparison?id={{ item.id }}" class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 transition-all">View Details</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if not optimization_items %}
+                    <div class="bg-surface-container-low rounded-[2rem] p-8 md:p-10 relative overflow-hidden group shadow-[0_32px_48px_-12px_rgba(0,30,60,0.03)]">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-secondary-container rounded-bl-[4rem] opacity-50 -z-0"></div>
+                        <div class="flex flex-wrap items-center justify-between mb-8 relative z-10 gap-4">
+                            <div class="flex items-center gap-3">
+                                <span class="bg-secondary text-on-secondary font-label text-xs uppercase tracking-wider py-1.5 px-4 rounded-full font-bold">Product Replacement</span>
+                                <span class="text-sm text-secondary font-medium">Texturizing Agent X</span>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-12 mb-8 relative z-10">
+                            <div class="space-y-2">
+                                <p class="text-sm text-on-surface-variant font-medium uppercase tracking-widest">Current</p>
+                                <p class="text-2xl font-headline font-bold text-on-surface">Guar Gum Standard</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm text-primary font-medium uppercase tracking-widest">Recommended</p>
+                                <p class="text-2xl font-headline font-bold text-primary">CelluTech Premium</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface rounded-xl p-6 mb-8 relative z-10 grid md:grid-cols-2 gap-6">
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Improvement Metric</p>
+                                <div class="flex items-center gap-2 text-primary font-bold font-headline text-lg">
+                                    <span class="material-symbols-outlined filled text-xl">trending_up</span>
+                                    +15% Price Efficiency
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm text-secondary mb-2">Considerations</p>
+                                <p class="text-sm text-on-surface font-medium">Slightly higher allergen risk profile. Review required.</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end relative z-10">
+                            <a href="/results/comparison" class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider py-4 px-8 rounded-full font-bold hover:shadow-lg hover:shadow-primary/20 transition-all">View Details</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

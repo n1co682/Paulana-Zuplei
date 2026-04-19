@@ -51,7 +51,14 @@ class RankedBOM:
 @dataclass
 class RankedOption:
     component: ComponentFromSupplier
-    score: float             # 0.0–1.0, higher is better
+    total_score: float
+    p_score: float
+    q_score: float
+    r_score: float
+    s_score: float
+    e_score: float
+    l_score: float
+    c_score: float
 
 # Type aliases for the pipeline outputs
 ReplacementMap = Dict[BOMEntry, List[ComponentFromSupplier]]
@@ -69,6 +76,7 @@ class Component(BaseModel):
     allergens: List[str] = Field(default_factory=list, description="List of allergens")
     equivalence_class: str = Field(..., description="Category or class of the component (e.g., vitamins, oil)")
     lead_time: Optional[int] = Field(None, description="Lead time in hours")
+    production_place: Optional[str] = None
 
 class Supplier(BaseModel):
     id: Optional[str] = None

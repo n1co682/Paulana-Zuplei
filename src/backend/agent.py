@@ -95,12 +95,13 @@ class AgnesAgent:
             db.update_product_enrichment(component)
 
         # Enrich supplier info if missing
-        if not supplier.ethics or not supplier.esg_score:
+        if not supplier.ethics or not supplier.esg_score or not component.production_place:
             logger.info(f"Analyzing ethics and ESG for supplier {supplier.name}...")
             ethics_data = tools.analyze_supplier_ethics(supplier.name)
             supplier.ethics = ethics_data.get("ethics", supplier.ethics)
             supplier.esg_score = ethics_data.get("esg_score", supplier.esg_score)
             supplier.production_place = ethics_data.get("production_place", supplier.production_place)
+            component.production_place = ethics_data.get("production_place", component.production_place)
             db.update_supplier_enrichment(supplier)
 
         # Mock negotiation for price and lead time (always do this for demo)

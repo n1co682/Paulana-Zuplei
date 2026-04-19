@@ -39,7 +39,8 @@ class DatabaseManager:
         query = """
             SELECT 
                 sp.ProductId, sp.SupplierId, rm.Name, sp.Price, sp.Quality, 
-                sp.Certificates, sp.Allergents, sp.LeadTime, s.Name as SupplierName
+                sp.Certificates, sp.Allergents, sp.LeadTime, s.Name as SupplierName,
+                sp.PlaceOfProduction
             FROM Supplier_Product sp
             JOIN RawMaterial rm ON sp.ProductId = rm.Id
             JOIN Supplier s ON sp.SupplierId = s.Id
@@ -71,7 +72,8 @@ class DatabaseManager:
                     certificates=[c.strip() for c in certs],
                     allergens=[a.strip() for a in algs],
                     equivalence_class=eq_class_name,
-                    lead_time=int(row[7]) if row[7] else None
+                    lead_time=int(row[7]) if row[7] else None,
+                    production_place=row[9]
                 )
                 components.append(comp)
         
@@ -135,8 +137,45 @@ class DatabaseManager:
             
             cursor.execute(
                 '''UPDATE Supplier_Product 
-                   SET Price = ?, Quality = ?, Allergents = ?, LeadTime = ?, Certificates = ? 
+                   SET Price = ?, Quality = ?, Allergents = ?, LeadTime = ?, Certificates = ?, PlaceOfProduction = ?
                    WHERE SupplierId = ? AND ProductId = ?''',
-                (price, component.quality, algs, component.lead_time, certs, 
+                (price, component.quality, algs, component.lead_time, certs, component.production_place,
                  component.supplier_id, component.id)
             )
+
+    def get_bom_detailed(self, product_id: int) -> List[Dict]:
+        """Fetch full BOM with all current supplier/product data."""
+        query = """
+            SELECT 
+                rm.Id as component_id, rm.Name as component_name, ec.Name as equivalence_class,
+                s.Id as supplier_id, s.Name as supplier_name, s.Ethics, s.EsgScore,
+                sp.Price, sp.Quality, sp.PlaceOfProduction, sp.Allergents, sp.LeadTime, sp.Certificates
+            FROM BOM b
+            JOIN RawMaterial rm ON b.Materiald = rm.Id
+            JOIN "Equivalence Class" ec ON rm.EquivalenceClassId = ec.Id
+            LEFT JOIN Supplier_Product sp ON rm.Id = sp.ProductId
+            LEFT JOIN Supplier s ON sp.SupplierId = s.Id
+            WHERE b.ProductID = ?
+        """
+        
+        bom = []
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, (product_id,))
+            for row in cursor.fetchall():
+                bom.append({
+                    "component_id": str(row[0]),
+                    "component_name": row[1],
+                    "equivalence_class": row[2],
+                    "supplier_id": str(row[3]) if row[3] else None,
+                    "supplier_name": row[4],
+                    "ethics": row[5],
+                    "esg_score": row[6],
+                    "price": row[7],
+                    "quality": row[8],
+                    "production_place": row[9],
+                    "allergens": row[10].split(",") if row[10] else [],
+                    "lead_time": row[11],
+                    "certificates": row[12].split(",") if row[12] else []
+                })
+        return bom

@@ -2,7 +2,7 @@ import itertools
 import logging
 from typing import List, Dict
 from models import (BillOfMaterials, UserPreferences, RankedBOM, 
-                    BOMConfiguration, ReplacementMap)
+                    BOMConfiguration, ReplacementMap, RankedOption)
 from component_from_supplier import ComponentFromSupplier
 
 logger = logging.getLogger("agnes.pipeline")
@@ -71,3 +71,40 @@ def evaluate_config(config: BOMConfiguration, p: UserPreferences) -> RankedBOM:
         config, final_score, avg_p, avg_q, avg_r, avg_s, avg_e, avg_l, 
         cons_score, unique_suppliers
     )
+
+
+def rank_individual_candidates(candidates: List[ComponentFromSupplier], rest_of_bom: List[Dict], p: UserPreferences) -> List[RankedOption]:
+    """Rank individual candidates based on scores and consolidation with rest of BOM."""
+    existing_suppliers = {b['supplier_name'] for b in rest_of_bom if b.get('supplier_name')}
+    
+    ranked_options = []
+    for c in candidates:
+        # Consolidation score: 1.0 if supplier already in BOM, 0.0 otherwise
+        cons_score = 1.0 if c.supplier_name in existing_suppliers else 0.0
+        
+        dims = [
+            (p.price, c.price_scaled), 
+            (p.quality, c.quality), 
+            (p.resilience, c.resilience_score),
+            (p.sustainability, c.esg_score), 
+            (p.ethics, c.ethics_score), 
+            (p.lead_time, c.lead_time_score),
+            (p.consolidation, cons_score)
+        ]
+        
+        total_weight = sum(w for w, _ in dims)
+        final_score = sum(w * v for w, v in dims) / total_weight if total_weight > 0 else 0.0
+        
+        ranked_options.append(RankedOption(
+            component=c,
+            total_score=final_score,
+            p_score=c.price_scaled,
+            q_score=c.quality,
+            r_score=c.resilience_score,
+            s_score=c.esg_score,
+            e_score=c.ethics_score,
+            l_score=c.lead_time_score,
+            c_score=cons_score
+        ))
+        
+    return sorted(ranked_options, key=lambda x: x.total_score, reverse=True)
