@@ -1,4 +1,6 @@
+import json
 import logging
+from pathlib import Path
 from typing import List, Dict, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +11,9 @@ from models import UserPreferences, Component as AgnesComponent
 from component_from_supplier import ComponentFromSupplier
 from agent import AgnesAgent, db
 from tools import generate_replacement_reasoning
+
+STAGE_DATA_PATH = Path(__file__).parent.parent.parent / "data" / "stage_mode_data.json"
+stage_mode_active = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -81,6 +86,22 @@ def agnes_to_pipeline_model(agnes_comp: AgnesComponent) -> ComponentFromSupplier
         equivalence_class=agnes_comp.equivalence_class
     )
 
+@app.get("/stage-mode")
+def get_stage_mode():
+    return {"active": stage_mode_active}
+
+
+@app.post("/stage-mode")
+def activate_stage_mode():
+    global stage_mode_active
+    with open(STAGE_DATA_PATH) as f:
+        stage_data = json.load(f)
+    db.populate_stage_mode_bom(stage_data["bom"])
+    stage_mode_active = True
+    logger.info("Stage mode activated — BOM populated with pre-generated data")
+    return {"active": True}
+
+
 @app.get("/bom")
 def get_bom():
     """Fetch current BOM for product_id=1."""
@@ -96,9 +117,19 @@ def get_bom():
 @app.post("/replacements")
 def search_replacements(req: ReplacementRequest):
     """Search replacements for selected components and return top 3 with reasoning."""
+    if stage_mode_active:
+        logger.info("Stage mode: returning pre-generated replacement data")
+        with open(STAGE_DATA_PATH) as f:
+            stage_data = json.load(f)
+        return {
+            cid: stage_data["replacements"][cid]
+            for cid in req.selected_component_ids
+            if cid in stage_data["replacements"]
+        }
+
     product_id = 1
     logger.info(f"Processing replacement search for components: {req.selected_component_ids}")
-    
+
     try:
         full_bom = db.get_bom_detailed(product_id)
         bom_lookup = {b['component_id']: b for b in full_bom}

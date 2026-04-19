@@ -146,6 +146,60 @@ class DatabaseManager:
                  component.supplier_id, component.id)
             )
 
+    def populate_stage_mode_bom(self, bom_data: list):
+        """Upsert stage mode BOM entries so /bom returns stage data."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            for entry in bom_data:
+                eq_id = entry["equivalence_class_id"]
+                comp_id = entry["component_id"]
+                sup_id = entry["supplier_id"]
+                allergens_str = ",".join(entry.get("allergens", []))
+                certs_str = ",".join(entry.get("certificates", []))
+
+                cursor.execute(
+                    'INSERT OR IGNORE INTO "Equivalence Class" (Id, Name) VALUES (?, ?)',
+                    (eq_id, entry["equivalence_class"]),
+                )
+                cursor.execute(
+                    'UPDATE "Equivalence Class" SET Name = ? WHERE Id = ?',
+                    (entry["equivalence_class"], eq_id),
+                )
+                cursor.execute(
+                    "INSERT OR IGNORE INTO RawMaterial (Id, EquivalenceClassId, Name) VALUES (?, ?, ?)",
+                    (comp_id, eq_id, entry["component_name"]),
+                )
+                cursor.execute(
+                    "UPDATE RawMaterial SET EquivalenceClassId = ?, Name = ? WHERE Id = ?",
+                    (eq_id, entry["component_name"], comp_id),
+                )
+                cursor.execute(
+                    "INSERT OR IGNORE INTO Supplier (Id, Name, Ethics, EsgScore) VALUES (?, ?, ?, ?)",
+                    (sup_id, entry["supplier_name"], entry["ethics"], entry["esg_score"]),
+                )
+                cursor.execute(
+                    "UPDATE Supplier SET Name = ?, Ethics = ?, EsgScore = ? WHERE Id = ?",
+                    (entry["supplier_name"], entry["ethics"], entry["esg_score"], sup_id),
+                )
+                cursor.execute(
+                    "INSERT OR IGNORE INTO Supplier_Product (SupplierId, ProductId) VALUES (?, ?)",
+                    (sup_id, comp_id),
+                )
+                cursor.execute(
+                    """UPDATE Supplier_Product
+                       SET Price = ?, Quality = ?, PlaceOfProduction = ?,
+                           Allergents = ?, LeadTime = ?, Certificates = ?
+                       WHERE SupplierId = ? AND ProductId = ?""",
+                    (
+                        entry["price"], entry["quality"], entry["production_place"],
+                        allergens_str, entry["lead_time"], certs_str,
+                        sup_id, comp_id,
+                    ),
+                )
+                cursor.execute(
+                    "INSERT OR IGNORE INTO BOM (ProductID, Materiald) VALUES (1, ?)", (comp_id,)
+                )
+
     def get_bom_detailed(self, product_id: int) -> List[Dict]:
         """Fetch full BOM with all current supplier/product data."""
         query = """

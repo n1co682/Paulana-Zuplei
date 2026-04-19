@@ -43,11 +43,31 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 analysis_data: dict = {}
 applied_recommendations: set = set()
+stage_mode_active: bool = False
 
 
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/stage-mode")
+async def get_stage_mode_status():
+    return {"active": stage_mode_active}
+
+
+@app.post("/api/stage-mode")
+async def activate_stage_mode():
+    global stage_mode_active
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.post(f"{BACKEND_URL}/stage-mode")
+            resp.raise_for_status()
+            data = resp.json()
+            stage_mode_active = data.get("active", False)
+        except Exception as e:
+            logger.error(f"Stage mode activation failed: {e}")
+    return {"active": stage_mode_active}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -71,7 +91,7 @@ async def start_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="start.html",
-        context={"request": request, "bom_items": bom_items},
+        context={"request": request, "bom_items": bom_items, "stage_mode": stage_mode_active},
     )
 
 
@@ -169,24 +189,33 @@ async def analyze_sourcing(
             "grade": quality_to_grade(cur_quality),
         }
 
-        recommended_profile = {
-            "name": top_comp.get("supplier_name", "—"),
-            "price": dollars_to_str(top_comp.get("price_per_unit") or 0.0),
-            "quality_rate": to_rate(top_comp.get("quality") or 0.5),
-            "location": top_comp.get("production_place") or "Unknown",
-            "resilience_score": to_five(top_comp.get("resilience_score") or 0.5),
-            "ethics_score": to_five(top_comp.get("ethics_score") or 0.5),
-            "esg_rating": esg_to_letter(top_comp.get("esg_score") or 0.5),
-            "certificates": top_comp.get("certificates") or [],
-            "lead_time": hours_to_days_str(top_comp.get("lead_time")),
-            "grade": quality_to_grade(top_comp.get("quality") or 0.5),
-        }
+        def _build_candidate_profile(cand: dict) -> dict:
+            c = cand.get("component", {})
+            return {
+                "name": c.get("supplier_name", "—"),
+                "price": dollars_to_str(c.get("price_per_unit") or 0.0),
+                "quality_rate": to_rate(c.get("quality") or 0.5),
+                "location": c.get("production_place") or "Unknown",
+                "resilience_score": to_five(c.get("resilience_score") or 0.5),
+                "ethics_score": to_five(c.get("ethics_score") or 0.5),
+                "esg_rating": esg_to_letter(c.get("esg_score") or 0.5),
+                "certificates": c.get("certificates") or [],
+                "lead_time": hours_to_days_str(c.get("lead_time")),
+                "grade": quality_to_grade(c.get("quality") or 0.5),
+                "reasoning": cand.get("reasoning", ""),
+                "total_score": cand.get("total_score", 0.0),
+            }
+
+        all_candidate_profiles = [_build_candidate_profile(c) for c in candidates[:3]]
+        recommended_profile = all_candidate_profiles[0] if all_candidate_profiles else {}
 
         comparisons.append({
             "comp_id": comp_id,
             "ingredient": component_name,
             "current_supplier": current_profile,
             "recommended_supplier": recommended_profile,
+            "all_candidates": all_candidate_profiles,
+            "reasoning": result.get("reasoning", ""),
         })
 
     analysis_data[analysis_id] = {
@@ -227,6 +256,7 @@ async def sourcing_analysis(request: Request):
             "critical_items": critical_items,
             "optimization_items": optimization_items,
             "backend_error": data.get("backend_error"),
+            "stage_mode": stage_mode_active,
         },
     )
 
@@ -249,7 +279,7 @@ async def ingredient_comparison(request: Request, id: Optional[str] = None):
     return templates.TemplateResponse(
         request=request,
         name="comparison.html",
-        context={"request": request, "comparison": comparison},
+        context={"request": request, "comparison": comparison, "stage_mode": stage_mode_active},
     )
 
 

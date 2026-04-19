@@ -61,8 +61,11 @@
 <body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col md:flex-row">
     <main class="flex-1 w-full flex flex-col min-h-screen px-4 md:px-12 lg:px-24 py-12 relative overflow-hidden items-center">
         <header class="flex justify-between items-center w-full max-w-4xl mx-auto mb-16 relative z-10">
-            <div class="flex items-center gap-4">
-                <span class="font-headline font-black text-3xl tracking-tighter text-primary">Paulana Zuplei</span>
+            <div class="flex items-center gap-3">
+                <span id="logo-text" class="font-headline font-black text-3xl tracking-tighter text-primary cursor-default select-none" ondblclick="activateStageMode()" title="">Paulana Zuplei</span>
+                {% if stage_mode %}
+                <span class="material-symbols-outlined text-base text-secondary opacity-60" title="Stage Mode">rocket_launch</span>
+                {% endif %}
             </div>
         </header>
         
@@ -466,5 +469,18 @@
             </form>
         </div>
     </main>
+    <script>
+        async function activateStageMode() {
+            try {
+                const resp = await fetch('/api/stage-mode', { method: 'POST' });
+                const data = await resp.json();
+                if (data.active) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error('Stage mode activation failed', e);
+            }
+        }
+    </script>
 </body>
 </html>
