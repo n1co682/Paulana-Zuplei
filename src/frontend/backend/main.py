@@ -1,12 +1,31 @@
+import logging
 import os
 from pathlib import Path
 from typing import Optional
 
+import httpx
 import fastapi
 import fastapi.middleware.cors
 from fastapi import Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+
+from transforms import (
+    best_improvement,
+    classify,
+    dollars_to_str,
+    esg_to_letter,
+    hours_to_days_str,
+    quality_to_grade,
+    to_five,
+    to_rate,
+    vectors_to_prefs,
+)
+
+logger = logging.getLogger("frontend")
+logging.basicConfig(level=logging.INFO)
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 app = fastapi.FastAPI()
 
@@ -18,14 +37,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Setup templates directory
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-# In-memory storage for demo purposes
-# In production, this would be a database
-analysis_data = {}
-applied_recommendations = set()  # Track applied recommendation IDs
+analysis_data: dict = {}
+applied_recommendations: set = set()
 
 
 @app.get("/health")
@@ -35,11 +51,19 @@ async def health() -> dict[str, str]:
 
 @app.get("/", response_class=HTMLResponse)
 async def start_page(request: Request):
-    """Render the start/input page"""
+    bom_items = []
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.get(f"{BACKEND_URL}/bom")
+            resp.raise_for_status()
+            bom_items = resp.json()
+        except Exception as e:
+            logger.error(f"Failed to fetch BOM from backend: {e}")
+
     return templates.TemplateResponse(
         request=request,
         name="start.html",
-        context={"request": request}
+        context={"request": request, "bom_items": bom_items},
     )
 
 
@@ -49,100 +73,144 @@ async def analyze_sourcing(
     materials: str = Form(""),
     compliance: str = Form("FDA / GRAS Standard"),
     bom_items: list[str] = Form([]),
+    vector_price: float = Form(0.7),
+    vector_quality: float = Form(0.6),
+    vector_resilience: float = Form(0.5),
+    vector_sustainability: float = Form(0.8),
+    vector_ethics: float = Form(0.65),
+    vector_leadtime: float = Form(0.55),
 ):
-    """
-    Process the input data and redirect to results.
-    In production, this would call your actual backend analysis service.
-    """
-    # Store the input data (simulating backend processing)
     analysis_id = "latest"
-    
-    # Simulate backend processing - in production, replace with actual API calls
+
+    # Fetch full BOM for current-supplier context
+    bom_items_full = []
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.get(f"{BACKEND_URL}/bom")
+            resp.raise_for_status()
+            bom_items_full = resp.json()
+        except Exception as e:
+            logger.error(f"BOM pre-fetch failed: {e}")
+    bom_lookup = {entry["component_id"]: entry for entry in bom_items_full}
+
+    payload = {
+        "selected_component_ids": bom_items,
+        "preferences": vectors_to_prefs(
+            vector_price, vector_quality, vector_resilience,
+            vector_sustainability, vector_ethics, vector_leadtime,
+        ),
+    }
+
+    replacements_raw: dict = {}
+    async with httpx.AsyncClient(timeout=180.0) as client:
+        try:
+            resp = await client.post(f"{BACKEND_URL}/replacements", json=payload)
+            resp.raise_for_status()
+            replacements_raw = resp.json()
+        except Exception as e:
+            logger.error(f"Replacements call failed: {e}")
+
+    critical_items = []
+    optimization_items = []
+    comparisons = []
+
+    for comp_id, result in replacements_raw.items():
+        bom_entry = bom_lookup.get(comp_id, {})
+        candidates = result.get("candidates", [])
+        if not candidates:
+            continue
+
+        top = candidates[0]
+        top_comp = top.get("component", {})
+        component_name = result.get("component_name", comp_id)
+        current_supplier_name = bom_entry.get("supplier_name") or "Current Supplier"
+        improvement_str = best_improvement(bom_entry, top_comp, top.get("total_score", 0.0))
+        category = classify(bom_entry, top)
+
+        item = {
+            "id": comp_id,
+            "type": "Supplier Change",
+            "ingredient": component_name,
+            "current": current_supplier_name,
+            "recommended": top_comp.get("supplier_name", "—"),
+            "improvement": improvement_str,
+            "considerations": result.get("reasoning", "See full report for details."),
+        }
+
+        if category == "critical":
+            critical_items.append(item)
+        else:
+            optimization_items.append(item)
+
+        # Build current supplier profile from BOM entry
+        cur_price_raw = float(bom_entry.get("price") or 0.0)
+        cur_quality = float(bom_entry.get("quality") or 0.5)
+        cur_esg = bom_entry.get("esg_score") or 50
+        cur_lead = bom_entry.get("lead_time")
+
+        current_profile = {
+            "name": current_supplier_name,
+            "price": dollars_to_str(cur_price_raw),
+            "quality_rate": to_rate(cur_quality),
+            "location": bom_entry.get("production_place") or "Unknown",
+            "resilience_score": 2.5,
+            "ethics_score": to_five(float(cur_esg) / 100.0),
+            "esg_rating": esg_to_letter(cur_esg),
+            "certificates": bom_entry.get("certificates") or [],
+            "lead_time": hours_to_days_str(cur_lead),
+            "grade": quality_to_grade(cur_quality),
+        }
+
+        recommended_profile = {
+            "name": top_comp.get("supplier_name", "—"),
+            "price": dollars_to_str(top_comp.get("price_per_unit") or 0.0),
+            "quality_rate": to_rate(top_comp.get("quality") or 0.5),
+            "location": top_comp.get("production_place") or "Unknown",
+            "resilience_score": to_five(top_comp.get("resilience_score") or 0.5),
+            "ethics_score": to_five(top_comp.get("ethics_score") or 0.5),
+            "esg_rating": esg_to_letter(top_comp.get("esg_score") or 0.5),
+            "certificates": top_comp.get("certificates") or [],
+            "lead_time": hours_to_days_str(top_comp.get("lead_time")),
+            "grade": quality_to_grade(top_comp.get("quality") or 0.5),
+        }
+
+        comparisons.append({
+            "comp_id": comp_id,
+            "ingredient": component_name,
+            "current_supplier": current_profile,
+            "recommended_supplier": recommended_profile,
+        })
+
     analysis_data[analysis_id] = {
         "materials": materials,
         "compliance": compliance,
         "bom_items": bom_items,
-        # Simulated analysis results
-        "critical_items": [
-            {
-                "type": "Supplier Change",
-                "ingredient": "Sodium Benzoate",
-                "current": "Apex Materials",
-                "recommended": "NovaSil Industries",
-                "improvement": "-10 days Lead Time",
-                "considerations": "Requires new quality audit prior to onboarding."
-            }
-        ],
-        "optimization_items": [
-            {
-                "type": "Product Replacement",
-                "ingredient": "Texturizing Agent X",
-                "current": "Guar Gum Standard",
-                "recommended": "CelluTech Premium",
-                "improvement": "+15% Price Efficiency",
-                "considerations": "Slightly higher allergen risk profile. Review required."
-            }
-        ],
-        "comparisons": [
-            {
-                "ingredient": "Industrial Grade Silicon",
-                "current_supplier": {
-                    "name": "GlobalTech Materials",
-                    "price": "$14.50",
-                    "scaled_price": "$142,000 / mo",
-                    "quality_rate": 92,
-                    "location": "Shenzhen, Guangdong, CN",
-                    "resilience_score": 2.5,
-                    "ethics_score": 3.0,
-                    "esg_rating": "B-",
-                    "certificates": ["ISO 9001"],
-                    "lead_time": "45 Days",
-                    "grade": "Grade B"
-                },
-                "recommended_supplier": {
-                    "name": "Nordic Silicon AB",
-                    "price": "$15.10",
-                    "scaled_price": "$148,000 / mo",
-                    "quality_rate": 99,
-                    "location": "Malmö, Skåne, SE",
-                    "resilience_score": 4.8,
-                    "ethics_score": 4.9,
-                    "esg_rating": "A+",
-                    "certificates": ["Carbon Neutral", "Fair Trade"],
-                    "lead_time": "14 Days",
-                    "grade": "Grade A"
-                }
-            }
-        ]
+        "critical_items": critical_items,
+        "optimization_items": optimization_items,
+        "comparisons": comparisons,
+        "backend_error": None if replacements_raw else "Backend analysis returned no results.",
     }
-    
-    # Redirect to results page
+
     return RedirectResponse(url="/results/analysis", status_code=303)
 
 
 @app.get("/results/analysis", response_class=HTMLResponse)
 async def sourcing_analysis(request: Request):
-    """Render the sourcing analysis results page"""
     analysis_id = "latest"
     data = analysis_data.get(analysis_id, {})
-    
-    # Add applied status to items
+
     critical_items = []
     for item in data.get("critical_items", []):
         item_copy = item.copy()
-        item_id = f"critical-{item.get('ingredient', '').lower().replace(' ', '-')}"
-        item_copy["id"] = item_id
-        item_copy["applied"] = item_id in applied_recommendations
+        item_copy["applied"] = item["id"] in applied_recommendations
         critical_items.append(item_copy)
-    
+
     optimization_items = []
     for item in data.get("optimization_items", []):
         item_copy = item.copy()
-        item_id = f"optimization-{item.get('ingredient', '').lower().replace(' ', '-')}"
-        item_copy["id"] = item_id
-        item_copy["applied"] = item_id in applied_recommendations
+        item_copy["applied"] = item["id"] in applied_recommendations
         optimization_items.append(item_copy)
-    
+
     return templates.TemplateResponse(
         request=request,
         name="analysis.html",
@@ -150,39 +218,37 @@ async def sourcing_analysis(request: Request):
             "request": request,
             "critical_items": critical_items,
             "optimization_items": optimization_items,
-        }
+            "backend_error": data.get("backend_error"),
+        },
     )
 
 
 @app.get("/results/comparison", response_class=HTMLResponse)
-async def ingredient_comparison(request: Request):
-    """Render the ingredient comparison page"""
+async def ingredient_comparison(request: Request, id: Optional[str] = None):
     analysis_id = "latest"
     data = analysis_data.get(analysis_id, {})
-    
     comparisons = data.get("comparisons", [])
-    comparison = comparisons[0] if comparisons else None
-    
+
+    comparison = None
+    if id and comparisons:
+        for c in comparisons:
+            if c.get("comp_id") == id:
+                comparison = c
+                break
+    if comparison is None and comparisons:
+        comparison = comparisons[0]
+
     return templates.TemplateResponse(
         request=request,
         name="comparison.html",
-        context={
-            "request": request,
-            "comparison": comparison,
-        }
+        context={"request": request, "comparison": comparison},
     )
 
 
 @app.post("/api/apply-recommendation")
 async def apply_recommendation(request: Request):
-    """
-    API endpoint to apply the recommendation.
-    In production, this would update your procurement system.
-    """
     body = await request.json()
     recommendation_id = body.get("recommendation_id", "")
-    
     if recommendation_id:
         applied_recommendations.add(recommendation_id)
-    
     return {"status": "success", "message": "Recommendation applied successfully"}

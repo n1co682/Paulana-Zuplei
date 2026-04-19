@@ -1,6 +1,7 @@
 import logging
 from typing import List, Dict, Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from pipeline import rank_individual_candidates
@@ -14,6 +15,46 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("agnes.main")
 
 app = FastAPI(title="Agnes AI Supply Chain Manager")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8001", "http://127.0.0.1:8001"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def ranked_option_to_dict(ro) -> dict:
+    """Explicitly serialize RankedOption + ComponentFromSupplier (avoids _private attribute keys)."""
+    c = ro.component
+    return {
+        "total_score": ro.total_score,
+        "p_score": ro.p_score,
+        "q_score": ro.q_score,
+        "r_score": ro.r_score,
+        "s_score": ro.s_score,
+        "e_score": ro.e_score,
+        "l_score": ro.l_score,
+        "c_score": ro.c_score,
+        "component": {
+            "supplier_name": c.supplier_name,
+            "price_per_unit": c.price_per_unit,
+            "price_scaled": c.price_scaled,
+            "quality": c.quality,
+            "quality_report": c.quality_report,
+            "production_place": c.production_place,
+            "resilience_score": c.resilience_score,
+            "ethics_score": c.ethics_score,
+            "ethics_report": c.ethics_report,
+            "esg_score": c.esg_score,
+            "certificates": c.certificates,
+            "allergents": c.allergents,
+            "lead_time": c.lead_time,
+            "lead_time_score": c.lead_time_score,
+            "equivalence_class": c.equivalence_class,
+        },
+    }
+
 
 class ReplacementRequest(BaseModel):
     selected_component_ids: List[str]
@@ -106,7 +147,7 @@ def search_replacements(req: ReplacementRequest):
             
             results[comp_id] = {
                 "component_name": comp_info['component_name'],
-                "candidates": top_3,
+                "candidates": [ranked_option_to_dict(r) for r in top_3],
                 "reasoning": reasoning
             }
             

@@ -122,7 +122,6 @@
                         <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
                             <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Price Per Unit</span>
                             <span class="text-4xl font-headline font-light text-on-surface">{{ comparison.current_supplier.price if comparison else "$14.50" }}</span>
-                            <span class="text-sm text-secondary-container-on mt-1 italic">Scaled: {{ comparison.current_supplier.scaled_price if comparison else "$142,000 / mo" }}</span>
                         </div>
                         <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
                             <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Quality Rate</span>
@@ -173,9 +172,17 @@
                             <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Certificates &amp; ESG</span>
                             <div class="flex flex-wrap items-center gap-4">
                                 <span class="text-2xl font-headline font-bold text-on-surface mr-2">{{ comparison.current_supplier.esg_rating if comparison else "B-" }} <span class="text-sm text-secondary font-body font-normal">ESG Rating</span></span>
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface text-on-surface-variant font-label text-xs uppercase tracking-wide border border-outline-variant/15">
-                                    <span class="material-symbols-outlined text-base">factory</span> ISO 9001
-                                </span>
+                                {% if comparison %}
+                                    {% for cert in comparison.current_supplier.certificates %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface text-on-surface-variant font-label text-xs uppercase tracking-wide border border-outline-variant/15">
+                                        <span class="material-symbols-outlined text-base">verified</span> {{ cert }}
+                                    </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface text-on-surface-variant font-label text-xs uppercase tracking-wide border border-outline-variant/15">
+                                        <span class="material-symbols-outlined text-base">factory</span> ISO 9001
+                                    </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-span-2 flex justify-between items-end mt-4 pt-8 border-t border-outline-variant/15">
@@ -210,7 +217,6 @@
                                 <span class="text-4xl font-headline font-bold text-on-surface">{{ comparison.recommended_supplier.price if comparison else "$15.10" }}</span>
                                 <span class="material-symbols-outlined text-error text-sm" title="Higher than current">trending_up</span>
                             </div>
-                            <span class="text-sm text-secondary mt-1 italic">Scaled: {{ comparison.recommended_supplier.scaled_price if comparison else "$148,000 / mo" }}</span>
                         </div>
                         <div class="col-span-2 md:col-span-1 flex flex-col gap-1">
                             <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Quality Rate</span>
@@ -264,12 +270,20 @@
                             <span class="text-sm font-semibold text-secondary uppercase tracking-wider">Certificates &amp; ESG</span>
                             <div class="flex flex-wrap items-center gap-4">
                                 <span class="text-2xl font-headline font-bold text-primary mr-2">{{ comparison.recommended_supplier.esg_rating if comparison else "A+" }} <span class="text-sm text-secondary font-body font-normal">ESG Rating</span></span>
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
-                                    <span class="material-symbols-outlined text-base text-tertiary">eco</span> Carbon Neutral
-                                </span>
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
-                                    <span class="material-symbols-outlined text-base text-secondary">handshake</span> Fair Trade
-                                </span>
+                                {% if comparison %}
+                                    {% for cert in comparison.recommended_supplier.certificates %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
+                                        <span class="material-symbols-outlined text-base text-primary">eco</span> {{ cert }}
+                                    </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
+                                        <span class="material-symbols-outlined text-base text-tertiary">eco</span> Carbon Neutral
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-on-surface font-label text-xs uppercase tracking-wide shadow-sm">
+                                        <span class="material-symbols-outlined text-base text-secondary">handshake</span> Fair Trade
+                                    </span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-span-2 flex justify-between items-end mt-4 pt-8 border-t border-outline-variant/30">
